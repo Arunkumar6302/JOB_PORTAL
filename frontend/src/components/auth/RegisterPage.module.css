@@ -88,6 +88,17 @@
   cursor: not-allowed;
 }
 
+.roleHint {
+  margin: -4px 0 12px;
+  padding: 10px 12px;
+  border-radius: 4px;
+  background: #edf5ff;
+  border: 1px solid #d2e6ff;
+  color: #154a84;
+  font-size: 13px;
+  font-weight: 600;
+}
+
 .footerText {
   text-align: center;
   margin-top: 20px;

@@ -1,0 +1,166 @@
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 50vh;
+}
+
+.spinner {
+  border: 4px solid #e8eff7;
+  border-top: 4px solid #1f5a98;
+  border-radius: 50%;
+  width: 42px;
+  height: 42px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.alert {
+  background: #fdebec;
+  border: 1px solid #f8c8cc;
+  color: #7a2430;
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin-bottom: 18px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.statCard {
+  border-radius: 12px;
+  padding: 16px;
+  background: linear-gradient(145deg, #ffffff 0%, #edf4ff 100%);
+  border: 1px solid #d8e8fb;
+}
+
+.statTitle {
+  margin: 0 0 10px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: #4f6480;
+}
+
+.statValue {
+  margin: 0;
+  font-size: 32px;
+  color: #16497d;
+  font-weight: 800;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid #dfe9f5;
+  padding: 16px;
+}
+
+.card h3 {
+  margin: 0 0 12px;
+  color: #1b4f84;
+}
+
+.empty {
+  margin: 0;
+  color: #657d99;
+  font-size: 14px;
+}
+
+.list {
+  display: grid;
+  gap: 10px;
+}
+
+.listItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid #e7eef7;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.itemTitle {
+  margin: 0;
+  font-weight: 700;
+  color: #183d67;
+}
+
+.itemSub {
+  margin: 2px 0 0;
+  font-size: 13px;
+  color: #6580a0;
+}
+
+.badge {
+  text-transform: capitalize;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 99px;
+  padding: 4px 10px;
+  background: #eef3f9;
+  color: #35506e;
+}
+
+.applied {
+  background: #e6f2ff;
+  color: #124880;
+}
+
+.selected {
+  background: #e4f8ea;
+  color: #17613f;
+}
+
+.rejected {
+  background: #fbe6e8;
+  color: #7a2631;
+}
+
+.notification {
+  border-radius: 10px;
+  border: 1px solid #e7eef8;
+  padding: 10px 12px;
+  background: #fbfdff;
+}
+
+.noteTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #143f6c;
+}
+
+.noteText {
+  margin: 6px 0;
+  font-size: 13px;
+  color: #5f7895;
+}
+
+.noteDate {
+  margin: 0;
+  font-size: 11px;
+  color: #8aa0bb;
+}
+
+@media (max-width: 950px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

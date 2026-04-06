@@ -2,13 +2,19 @@ const User = require('../models/User');
 const OTPVerification = require('../models/OTPVerification');
 const { hashPassword, comparePassword, generateToken, generateOTP, sendOTP } = require('../utils/authUtils');
 
+const ALLOWED_ROLES = ['admin', 'superadmin', 'manager', 'user'];
+
 // Register
 const register = async (req, res) => {
   try {
-    const { name, email, password, role = 'admin' } = req.body;
+    const { name, email, password, role = 'user' } = req.body;
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });
+    }
+
+    if (!ALLOWED_ROLES.includes(role)) {
+      return res.status(400).json({ message: 'Invalid role selected' });
     }
 
     const existingUser = await User.findByEmail(email);
@@ -102,7 +108,7 @@ const getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
     res.status(200).json({
-      user: { id: user.id, name: user.name, email: user.email, role: user.role }
+      user: { id: user.id, name: user.name, email: user.email, role: user.role, isBlocked: user.is_blocked }
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching user', error: error.message });

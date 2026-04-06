@@ -21,7 +21,7 @@ const LoginPage = () => {
       // Redirect to OTP verification page
       navigate('/verify-otp', { state: { userId: result.userId, email: result.email } });
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.error || err.response?.data?.message || 'Login failed');
     } finally {
       setLoading(false);
     }

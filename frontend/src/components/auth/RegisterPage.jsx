@@ -9,7 +9,7 @@ const RegisterPage = () => {
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'admin'
+    role: 'user'
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -102,16 +102,7 @@ const RegisterPage = () => {
             />
           </div>
 
-          <div className={styles.formGroup}>
-            <label>Role</label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-            >
-              <option value="admin">Admin</option>
-            </select>
-          </div>
+          <p className={styles.roleHint}>Registering as: Job Seeker (User)</p>
 
           <button
             type="submit"

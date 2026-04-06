@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:5001/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -67,6 +67,18 @@ export const dashboardAPI = {
 
 export const logsAPI = {
   getAll: () => api.get('/logs'),
+};
+
+export const userPortalAPI = {
+  getHome: () => api.get('/user-portal/home'),
+  getProfile: () => api.get('/user-portal/profile'),
+  updateProfile: (data) => api.put('/user-portal/profile', data),
+  getJobs: () => api.get('/user-portal/jobs'),
+  applyToJob: (jobId) => api.post(`/user-portal/jobs/${jobId}/apply`),
+  getApplications: () => api.get('/user-portal/applications'),
+  getNotifications: () => api.get('/user-portal/notifications'),
+  getInterviews: () => api.get('/user-portal/interviews'),
+  getAssessments: () => api.get('/user-portal/assessments'),
 };
 
 export default api;

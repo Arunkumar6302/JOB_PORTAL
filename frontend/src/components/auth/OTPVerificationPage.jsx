@@ -37,8 +37,14 @@ const OTPVerificationPage = () => {
     setLoading(true);
 
     try {
-      await verifyOTP(userId, otp);
-      navigate('/admin/dashboard');
+      const data = await verifyOTP(userId, otp);
+      const userRole = data?.user?.role;
+
+      if (['admin', 'superadmin'].includes(userRole)) {
+        navigate('/admin/dashboard');
+      } else {
+        navigate('/user/home');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'OTP verification failed');
     } finally {

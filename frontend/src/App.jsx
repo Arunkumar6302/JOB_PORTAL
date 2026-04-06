@@ -16,35 +16,64 @@ import Subscriptions from './pages/Subscriptions';
 import Logs from './pages/Logs';
 import CompanyDetails from './pages/CompanyDetails';
 import Settings from './pages/Settings';
+import UserHome from './pages/user/UserHome';
+import UserJobProfiles from './pages/user/UserJobProfiles';
+import UserProfile from './pages/user/UserProfile';
+import UserInterviews from './pages/user/UserInterviews';
+import UserAssessments from './pages/user/UserAssessments';
+import UserEvents from './pages/user/UserEvents';
+import UserCompetitions from './pages/user/UserCompetitions';
+import UserResume from './pages/user/UserResume';
+import UserHelp from './pages/user/UserHelp';
 
-const ProtectedRoute = ({ children }) => {
-  const { token, loading } = useAuth();
+const routeByRole = (role) => {
+  if (['admin', 'superadmin'].includes(role)) {
+    return '/admin/dashboard';
+  }
+
+  return '/user/home';
+};
+
+const ProtectedRoute = ({ children, allowedRoles }) => {
+  const { token, loading, user } = useAuth();
 
   if (loading) {
     return (
-      <div style={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100vh'
-      }}>
-        <div style={{
-          border: '4px solid #f0f2f5',
-          borderTop: '4px solid #0066cc',
-          borderRadius: '50%',
-          width: '40px',
-          height: '40px',
-          animation: 'spin 1s linear infinite'
-        }}></div>
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh'
+        }}
+      >
+        <div
+          style={{
+            border: '4px solid #f0f2f5',
+            borderTop: '4px solid #0066cc',
+            borderRadius: '50%',
+            width: '40px',
+            height: '40px',
+            animation: 'spin 1s linear infinite'
+          }}
+        ></div>
       </div>
     );
   }
 
-  return token ? children : <Navigate to="/" replace />;
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (allowedRoles && user && !allowedRoles.includes(user.role)) {
+    return <Navigate to={routeByRole(user.role)} replace />;
+  }
+
+  return children;
 };
 
 const AppContent = () => {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
 
   return (
     <Routes>
@@ -53,11 +82,10 @@ const AppContent = () => {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-otp" element={<OTPVerificationPage />} />
 
-      {/* Admin Routes */}
       <Route
         path="/admin/dashboard"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
             <Dashboard />
           </ProtectedRoute>
         }
@@ -65,7 +93,7 @@ const AppContent = () => {
       <Route
         path="/admin/companies"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
             <Companies />
           </ProtectedRoute>
         }
@@ -73,7 +101,7 @@ const AppContent = () => {
       <Route
         path="/admin/company/:id"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
             <CompanyDetails />
           </ProtectedRoute>
         }
@@ -81,7 +109,7 @@ const AppContent = () => {
       <Route
         path="/admin/users"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
             <Users />
           </ProtectedRoute>
         }
@@ -89,7 +117,7 @@ const AppContent = () => {
       <Route
         path="/admin/jobs"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
             <Jobs />
           </ProtectedRoute>
         }
@@ -97,7 +125,7 @@ const AppContent = () => {
       <Route
         path="/admin/applications"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
             <Applications />
           </ProtectedRoute>
         }
@@ -105,7 +133,7 @@ const AppContent = () => {
       <Route
         path="/admin/subscriptions"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
             <Subscriptions />
           </ProtectedRoute>
         }
@@ -113,7 +141,7 @@ const AppContent = () => {
       <Route
         path="/admin/logs"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
             <Logs />
           </ProtectedRoute>
         }
@@ -121,14 +149,89 @@ const AppContent = () => {
       <Route
         path="/admin/settings"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
             <Settings />
           </ProtectedRoute>
         }
       />
 
-      {/* 404 Redirect */}
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route
+        path="/user/home"
+        element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <UserHome />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user/job-profiles"
+        element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <UserJobProfiles />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user/my-profile"
+        element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <UserProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user/interviews"
+        element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <UserInterviews />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user/assessments"
+        element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <UserAssessments />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user/events"
+        element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <UserEvents />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user/competitions"
+        element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <UserCompetitions />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user/resume"
+        element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <UserResume />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user/help"
+        element={
+          <ProtectedRoute allowedRoles={['user']}>
+            <UserHelp />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="*"
+        element={token && user ? <Navigate to={routeByRole(user.role)} replace /> : <Navigate to="/" replace />}
+      />
     </Routes>
   );
 };

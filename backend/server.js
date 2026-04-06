@@ -12,6 +12,9 @@ const applicationRoutes = require('./routes/applicationRoutes');
 const subscriptionRoutes = require('./routes/subscriptionRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const logRoutes = require('./routes/logRoutes');
+const userPortalRoutes = require('./routes/userPortalRoutes');
+const User = require('./models/User');
+const { hashPassword } = require('./utils/authUtils');
 
 // Import middleware
 const errorHandler = require('./middleware/errorHandler');
@@ -38,6 +41,7 @@ app.use('/api/applications', applicationRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/logs', logRoutes);
+app.use('/api/user-portal', userPortalRoutes);
 
 // 404 Handler
 app.use((req, res) => {
@@ -47,7 +51,30 @@ app.use((req, res) => {
 // Error Handler Middleware
 app.use(errorHandler);
 
+const ensureDemoUser = async () => {
+  if (process.env.NODE_ENV === 'production') {
+    return;
+  }
+
+  const demoEmail = 'irfanshaikmohammad1@gmail.com';
+  const demoPassword = 'User@123';
+
+  try {
+    const existing = await User.findByEmail(demoEmail);
+    if (existing) {
+      return;
+    }
+
+    const hashedPassword = await hashPassword(demoPassword);
+    await User.create('Irfan Demo User', demoEmail, hashedPassword, 'user');
+    console.log(`Demo user created: ${demoEmail} / ${demoPassword}`);
+  } catch (error) {
+    console.error('Unable to prepare demo user:', error.message);
+  }
+};
+
 // Start Server
-app.listen(PORT, () => {
-  console.log(`\n✅ Server is running on http://localhost:${PORT}\n`);
+app.listen(PORT, async () => {
+  console.log(`\nServer is running on http://localhost:${PORT}\n`);
+  await ensureDemoUser();
 });

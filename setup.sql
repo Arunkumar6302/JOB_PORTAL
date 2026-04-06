@@ -4,9 +4,30 @@ CREATE TABLE users (
   name VARCHAR(100) NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  role VARCHAR(50) CHECK(role IN ('admin', 'superadmin')) DEFAULT 'admin',
+  role VARCHAR(50) CHECK(role IN ('admin', 'superadmin', 'manager', 'user')) DEFAULT 'user',
   is_blocked BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE user_profiles (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  profile_photo_url TEXT,
+  display_name VARCHAR(120),
+  headline VARCHAR(180),
+  basic_details JSONB NOT NULL DEFAULT '{}'::jsonb,
+  education_details JSONB NOT NULL DEFAULT '[]'::jsonb,
+  internships JSONB NOT NULL DEFAULT '[]'::jsonb,
+  work_experience JSONB NOT NULL DEFAULT '[]'::jsonb,
+  skills JSONB NOT NULL DEFAULT '[]'::jsonb,
+  subsets JSONB NOT NULL DEFAULT '[]'::jsonb,
+  languages JSONB NOT NULL DEFAULT '[]'::jsonb,
+  projects JSONB NOT NULL DEFAULT '[]'::jsonb,
+  accomplishments JSONB NOT NULL DEFAULT '{}'::jsonb,
+  extra_curricular_activities JSONB NOT NULL DEFAULT '[]'::jsonb,
+  resume_url TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE companies (
@@ -76,6 +97,7 @@ CREATE TABLE admin_activity_logs (
 
 -- Create indexes
 CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_user_profiles_user_id ON user_profiles(user_id);
 CREATE INDEX idx_companies_email ON companies(email);
 CREATE INDEX idx_jobs_company_id ON jobs(company_id);
 CREATE INDEX idx_applications_job_id ON applications(job_id);
