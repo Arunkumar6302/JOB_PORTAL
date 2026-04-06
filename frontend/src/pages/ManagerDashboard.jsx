@@ -52,6 +52,12 @@ const ManagerDashboard = () => {
     jobId: '',
     notes: ''
   });
+  const [newJobForm, setNewJobForm] = useState({
+    companyId: '',
+    title: '',
+    description: '',
+    location: 'Remote'
+  });
 
   useEffect(() => {
     loadManagerData();
@@ -163,6 +169,31 @@ const ManagerDashboard = () => {
       await loadManagerData();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update job status');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const createJob = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError('');
+    try {
+      await managerAPI.createJob({
+        companyId: newJobForm.companyId ? Number(newJobForm.companyId) : null,
+        title: newJobForm.title,
+        description: newJobForm.description,
+        location: newJobForm.location
+      });
+      setNewJobForm({
+        companyId: '',
+        title: '',
+        description: '',
+        location: 'Remote'
+      });
+      await loadManagerData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create job');
     } finally {
       setSaving(false);
     }
@@ -340,21 +371,56 @@ const ManagerDashboard = () => {
 
     if (activeSection === 'jobs') {
       return (
-        <div className={styles.card}>
-          <h3>Job Updates</h3>
-          <table className={styles.table}>
-            <thead><tr><th>Title</th><th>Company</th><th>Status</th><th>Action</th></tr></thead>
-            <tbody>
-              {jobs.map((job) => (
-                <tr key={job.id}>
-                  <td>{job.title}</td>
-                  <td>{job.company_name}</td>
-                  <td>{job.status}</td>
-                  <td><button type="button" className={job.status === 'open' ? styles.btnWarning : styles.btnSuccess} onClick={() => handleJobStatusToggle(job)} disabled={saving}>{job.status === 'open' ? 'Close' : 'Open'}</button></td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className={styles.grid}>
+          <div className={styles.card}>
+            <h3>Create Job</h3>
+            <form onSubmit={createJob} className={styles.form}>
+              <input
+                type="number"
+                placeholder="Company ID (optional, defaults first company)"
+                value={newJobForm.companyId}
+                onChange={(e) => setNewJobForm((prev) => ({ ...prev, companyId: e.target.value }))}
+              />
+              <input
+                type="text"
+                placeholder="Job Title"
+                value={newJobForm.title}
+                onChange={(e) => setNewJobForm((prev) => ({ ...prev, title: e.target.value }))}
+                required
+              />
+              <textarea
+                placeholder="Job Description"
+                value={newJobForm.description}
+                onChange={(e) => setNewJobForm((prev) => ({ ...prev, description: e.target.value }))}
+              />
+              <input
+                type="text"
+                placeholder="Location"
+                value={newJobForm.location}
+                onChange={(e) => setNewJobForm((prev) => ({ ...prev, location: e.target.value }))}
+              />
+              <button type="submit" className={styles.btnPrimary} disabled={saving}>
+                {saving ? 'Saving...' : 'Create Opening'}
+              </button>
+            </form>
+          </div>
+
+          <div className={styles.card}>
+            <h3>Job Updates</h3>
+            <table className={styles.table}>
+              <thead><tr><th>Title</th><th>Company</th><th>Status</th><th>Action</th></tr></thead>
+              <tbody>
+                {jobs.map((job) => (
+                  <tr key={job.id}>
+                    <td>{job.title}</td>
+                    <td>{job.company_name}</td>
+                    <td>{job.status}</td>
+                    <td><button type="button" className={job.status === 'open' ? styles.btnWarning : styles.btnSuccess} onClick={() => handleJobStatusToggle(job)} disabled={saving}>{job.status === 'open' ? 'Close' : 'Open'}</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       );
     }

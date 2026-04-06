@@ -480,6 +480,29 @@ export const managerAPI = {
     return ok({ message: 'Jobs fetched successfully', data: jobs });
   },
 
+  createJob: async (payload) => {
+    if (!payload?.title) return fail('title is required');
+
+    const fallbackCompanyId = state.companies[0]?.id || 1;
+    const companyId = payload.companyId ? Number(payload.companyId) : fallbackCompanyId;
+    const company = state.companies.find((c) => c.id === companyId);
+    if (!company) return fail('Invalid companyId');
+
+    const job = {
+      id: nextId(state.jobs),
+      company_id: companyId,
+      title: payload.title,
+      description: payload.description || '',
+      location: payload.location || 'Remote',
+      status: 'open',
+      created_at: now()
+    };
+    state.jobs.unshift(job);
+    addLog('Manager Created Job', 'job', job.id);
+    persistState();
+    return ok({ message: 'Job created successfully', data: { ...job, company_name: company.name } });
+  },
+
   updateJobStatus: async (id, status) => {
     const job = state.jobs.find((j) => j.id === Number(id));
     if (!job) return fail('Job not found', 404);
