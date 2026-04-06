@@ -85,7 +85,8 @@ const UserProfile = () => {
     'projects',
     'accomplishments',
     'extracurricular',
-    'resume'
+    'resume',
+    'view-saved'
   ];
 
   useEffect(() => {
@@ -124,6 +125,28 @@ const UserProfile = () => {
       ...prev,
       [field]: value
     }));
+  };
+
+  const handlePhotoUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      handleFieldChange('profilePhotoUrl', String(reader.result || ''));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleResumeUpload = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      handleFieldChange('resumeUrl', String(reader.result || ''));
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleBasicChange = (field, value) => {
@@ -230,15 +253,20 @@ const UserProfile = () => {
             </div>
             <div className={styles.gridTwo}>
               <div>
-                <label>Profile Photo URL (Edit Option)</label>
+                <label>Profile Photo Upload</label>
+                <input type="file" accept="image/*" onChange={handlePhotoUpload} />
+                <p className={styles.helperText}>Upload image from your device to update profile photo.</p>
+              </div>
+              <div>
+                <label>Photo Preview Source</label>
                 <input
                   type="text"
                   value={profile.profilePhotoUrl || ''}
-                  onChange={(e) => handleFieldChange('profilePhotoUrl', e.target.value)}
-                  placeholder="https://example.com/photo.jpg"
+                  readOnly
+                  placeholder="Uploaded image data"
                 />
               </div>
-              <div>
+              <div className={styles.fullWidth}>
                 <label>Display Name</label>
                 <input
                   type="text"
@@ -631,13 +659,76 @@ const UserProfile = () => {
         {showSection('resume') && (
         <section className={styles.card}>
           <h3>Resume</h3>
-          <label>Resume URL</label>
-          <input
-            type="text"
-            value={profile.resumeUrl || ''}
-            onChange={(e) => handleFieldChange('resumeUrl', e.target.value)}
-            placeholder="https://example.com/my-resume.pdf"
-          />
+          <label>Resume Upload</label>
+          <input type="file" accept=".pdf,.doc,.docx" onChange={handleResumeUpload} />
+          <p className={styles.helperText}>Upload your latest resume file. It will be saved in your profile.</p>
+          {profile.resumeUrl ? (
+            <a className={styles.resumeLink} href={profile.resumeUrl} download="resume">
+              Download Current Resume
+            </a>
+          ) : (
+            <p className={styles.helperText}>No resume uploaded yet.</p>
+          )}
+        </section>
+        )}
+
+        {showSection('view-saved') && (
+        <section className={styles.card}>
+          <h3>Saved Profile Data (View Only)</h3>
+          <div className={styles.viewGrid}>
+            <div>
+              <p className={styles.viewLabel}>Display Name</p>
+              <p className={styles.viewValue}>{profile.displayName || 'N/A'}</p>
+            </div>
+            <div>
+              <p className={styles.viewLabel}>Headline</p>
+              <p className={styles.viewValue}>{profile.headline || 'N/A'}</p>
+            </div>
+            <div className={styles.fullWidth}>
+              <p className={styles.viewLabel}>Basic Details</p>
+              <pre className={styles.viewJson}>{JSON.stringify(profile.basicDetails || {}, null, 2)}</pre>
+            </div>
+            <div className={styles.fullWidth}>
+              <p className={styles.viewLabel}>Education</p>
+              <pre className={styles.viewJson}>{JSON.stringify(profile.educationDetails || [], null, 2)}</pre>
+            </div>
+            <div className={styles.fullWidth}>
+              <p className={styles.viewLabel}>Internships</p>
+              <pre className={styles.viewJson}>{JSON.stringify(profile.internships || [], null, 2)}</pre>
+            </div>
+            <div className={styles.fullWidth}>
+              <p className={styles.viewLabel}>Work Experience</p>
+              <pre className={styles.viewJson}>{JSON.stringify(profile.workExperience || [], null, 2)}</pre>
+            </div>
+            <div className={styles.fullWidth}>
+              <p className={styles.viewLabel}>Skills / Subsets / Languages</p>
+              <pre className={styles.viewJson}>{JSON.stringify({
+                skills: profile.skills || [],
+                subsets: profile.subsets || [],
+                languages: profile.languages || []
+              }, null, 2)}</pre>
+            </div>
+            <div className={styles.fullWidth}>
+              <p className={styles.viewLabel}>Projects</p>
+              <pre className={styles.viewJson}>{JSON.stringify(profile.projects || [], null, 2)}</pre>
+            </div>
+            <div className={styles.fullWidth}>
+              <p className={styles.viewLabel}>Accomplishments</p>
+              <pre className={styles.viewJson}>{JSON.stringify(profile.accomplishments || {}, null, 2)}</pre>
+            </div>
+            <div className={styles.fullWidth}>
+              <p className={styles.viewLabel}>Extra Curricular Activities</p>
+              <pre className={styles.viewJson}>{JSON.stringify(profile.extraCurricularActivities || [], null, 2)}</pre>
+            </div>
+            <div>
+              <p className={styles.viewLabel}>Profile Photo Uploaded</p>
+              <p className={styles.viewValue}>{profile.profilePhotoUrl ? 'Yes' : 'No'}</p>
+            </div>
+            <div>
+              <p className={styles.viewLabel}>Resume Uploaded</p>
+              <p className={styles.viewValue}>{profile.resumeUrl ? 'Yes' : 'No'}</p>
+            </div>
+          </div>
         </section>
         )}
 

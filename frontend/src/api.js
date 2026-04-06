@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -22,7 +22,7 @@ export const authAPI = {
   register: (data) => api.post('/auth/register', data),
   login: (data) => api.post('/auth/login', data),
   verifyOTP: (data) => api.post('/auth/verify-otp', data),
-  getCurrentUser: () => api.get('/auth/me'),
+  getCurrentUser: () => api.get('/auth/me')
 };
 
 export const companyAPI = {
@@ -32,41 +32,69 @@ export const companyAPI = {
   updateStatus: (id, status) => api.put(`/companies/${id}/status`, { status }),
   approve: (id) => api.put(`/companies/${id}/approve`),
   reject: (id) => api.put(`/companies/${id}/reject`),
-  block: (id) => api.put(`/companies/${id}/block`),
+  block: (id) => api.put(`/companies/${id}/block`)
 };
 
 export const userAPI = {
   getAll: () => api.get('/users'),
   getById: (id) => api.get(`/users/${id}`),
   block: (id) => api.put(`/users/${id}/block`),
-  unblock: (id) => api.put(`/users/${id}/unblock`),
+  unblock: (id) => api.put(`/users/${id}/unblock`)
 };
 
 export const jobAPI = {
   getAll: () => api.get('/jobs'),
   getById: (id) => api.get(`/jobs/${id}`),
   updateStatus: (id, status) => api.put(`/jobs/${id}/status`, { status }),
-  delete: (id) => api.delete(`/jobs/${id}`),
+  delete: (id) => api.delete(`/jobs/${id}`)
 };
 
 export const applicationAPI = {
   getAll: () => api.get('/applications'),
-  updateStatus: (id, status) => api.put(`/applications/${id}/status`, { status }),
+  updateStatus: (id, status) => api.put(`/applications/${id}/status`, { status })
 };
 
 export const subscriptionAPI = {
   getAll: () => api.get('/subscriptions'),
   getById: (id) => api.get(`/subscriptions/${id}`),
-  updateStatus: (id, status) => api.put(`/subscriptions/${id}/status`, { status }),
+  updateStatus: (id, status) => api.put(`/subscriptions/${id}/status`, { status })
 };
 
 export const dashboardAPI = {
   getStats: () => api.get('/dashboard/stats'),
-  getCharts: () => api.get('/dashboard/charts'),
+  getCharts: () => api.get('/dashboard/charts')
 };
 
 export const logsAPI = {
-  getAll: () => api.get('/logs'),
+  getAll: () => api.get('/logs')
+};
+
+export const managerAPI = {
+  getProfile: () => api.get('/manager/profile'),
+  updateProfile: (data) => api.put('/manager/profile', data),
+
+  getUsers: () => api.get('/manager/users'),
+  updateUserBlockStatus: (id, isBlocked) => api.put(`/manager/users/${id}/block-status`, { isBlocked }),
+
+  getJobs: () => api.get('/manager/jobs'),
+  createJob: (data) => api.post('/manager/jobs', data),
+  updateJobStatus: (id, status) => api.put(`/manager/jobs/${id}/status`, { status }),
+
+  getTestLinks: () => api.get('/manager/test-links'),
+  createTestLink: (data) => api.post('/manager/test-links', data),
+  updateTestLink: (id, data) => api.put(`/manager/test-links/${id}`, data),
+  getTestLinkUpdates: () => api.get('/manager/test-link-updates'),
+
+  getInterviews: () => api.get('/manager/interviews'),
+  createInterview: (data) => api.post('/manager/interviews', data),
+  updateInterviewStatus: (id, status) => api.put(`/manager/interviews/${id}/status`, { status }),
+  getInterviewUpdates: () => api.get('/manager/interview-updates'),
+
+  getOffboardingLetters: () => api.get('/manager/offboarding-letters'),
+  sendOffboardingLetter: (data) => api.post('/manager/offboarding-letters', data),
+
+  getStats: () => api.get('/manager/stats'),
+  getRecentUpdates: () => api.get('/manager/recent-updates')
 };
 
 export const userPortalAPI = {
@@ -78,7 +106,7 @@ export const userPortalAPI = {
   getApplications: () => api.get('/user-portal/applications'),
   getNotifications: () => api.get('/user-portal/notifications'),
   getInterviews: () => api.get('/user-portal/interviews'),
-  getAssessments: () => api.get('/user-portal/assessments'),
+  getAssessments: () => api.get('/user-portal/assessments')
 };
 
 export default api;

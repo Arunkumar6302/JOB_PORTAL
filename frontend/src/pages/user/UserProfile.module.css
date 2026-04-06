@@ -129,6 +129,57 @@
   justify-content: flex-end;
 }
 
+.helperText {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: #6884a3;
+}
+
+.resumeLink {
+  display: inline-block;
+  margin-top: 8px;
+  color: #1a4f84;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.resumeLink:hover {
+  text-decoration: underline;
+}
+
+.viewGrid {
+  display: grid;
+  gap: 10px 12px;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+}
+
+.viewLabel {
+  margin: 0 0 4px;
+  color: #4c6b8d;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.viewValue {
+  margin: 0;
+  color: #183f68;
+  font-weight: 600;
+}
+
+.viewJson {
+  margin: 0;
+  background: #f5f9ff;
+  border: 1px solid #d8e6f7;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: #224d7a;
+}
+
 .saveBtn {
   background: #1f5a98;
   color: #fff;

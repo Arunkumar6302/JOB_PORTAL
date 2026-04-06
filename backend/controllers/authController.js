@@ -25,12 +25,12 @@ const register = async (req, res) => {
     const hashedPassword = await hashPassword(password);
     const newUser = await User.create(name, email, hashedPassword, role);
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'User registered successfully',
       user: { id: newUser.id, name: newUser.name, email: newUser.email, role: newUser.role }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error registering user', error: error.message });
+    return res.status(500).json({ message: 'Error registering user', error: error.message });
   }
 };
 
@@ -57,20 +57,19 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Generate OTP
     const otp = generateOTP();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     await OTPVerification.create(user.id, otp, expiresAt);
     sendOTP(user.email, otp);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'OTP sent to email. Please verify.',
       userId: user.id,
       email: user.email
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error logging in', error: error.message });
+    return res.status(500).json({ message: 'Error logging in', error: error.message });
   }
 };
 
@@ -89,17 +88,20 @@ const verifyOTP = async (req, res) => {
     }
 
     const user = await User.findById(userId);
-    const token = generateToken(user);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
 
+    const token = generateToken(user);
     await OTPVerification.markAsVerified(otpRecord.id);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'OTP verified successfully',
       token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error verifying OTP', error: error.message });
+    return res.status(500).json({ message: 'Error verifying OTP', error: error.message });
   }
 };
 
@@ -107,11 +109,15 @@ const verifyOTP = async (req, res) => {
 const getCurrentUser = async (req, res) => {
   try {
     const user = await User.findById(req.user.id);
-    res.status(200).json({
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.status(200).json({
       user: { id: user.id, name: user.name, email: user.email, role: user.role, isBlocked: user.is_blocked }
     });
   } catch (error) {
-    res.status(500).json({ message: 'Error fetching user', error: error.message });
+    return res.status(500).json({ message: 'Error fetching user', error: error.message });
   }
 };
 

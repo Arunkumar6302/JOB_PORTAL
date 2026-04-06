@@ -16,6 +16,7 @@ import Subscriptions from './pages/Subscriptions';
 import Logs from './pages/Logs';
 import CompanyDetails from './pages/CompanyDetails';
 import Settings from './pages/Settings';
+import ManagerDashboard from './pages/ManagerDashboard';
 import UserHome from './pages/user/UserHome';
 import UserJobProfiles from './pages/user/UserJobProfiles';
 import UserProfile from './pages/user/UserProfile';
@@ -26,9 +27,13 @@ import UserCompetitions from './pages/user/UserCompetitions';
 import UserResume from './pages/user/UserResume';
 import UserHelp from './pages/user/UserHelp';
 
-const routeByRole = (role) => {
+const getDefaultDashboardPath = (role) => {
   if (['admin', 'superadmin'].includes(role)) {
     return '/admin/dashboard';
+  }
+
+  if (role === 'manager') {
+    return '/manager/dashboard';
   }
 
   return '/user/home';
@@ -66,7 +71,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (allowedRoles && user && !allowedRoles.includes(user.role)) {
-    return <Navigate to={routeByRole(user.role)} replace />;
+    return <Navigate to={getDefaultDashboardPath(user.role)} replace />;
   }
 
   return children;
@@ -82,6 +87,12 @@ const AppContent = () => {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify-otp" element={<OTPVerificationPage />} />
 
+      <Route
+        path="/dashboard"
+        element={token && user ? <Navigate to={getDefaultDashboardPath(user.role)} replace /> : <Navigate to="/login" replace />}
+      />
+
+      {/* Admin Routes */}
       <Route
         path="/admin/dashboard"
         element={
@@ -155,6 +166,17 @@ const AppContent = () => {
         }
       />
 
+      {/* Manager Route */}
+      <Route
+        path="/manager/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={['manager', 'admin', 'superadmin']}>
+            <ManagerDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* User Routes */}
       <Route
         path="/user/home"
         element={
@@ -230,7 +252,7 @@ const AppContent = () => {
 
       <Route
         path="*"
-        element={token && user ? <Navigate to={routeByRole(user.role)} replace /> : <Navigate to="/" replace />}
+        element={token && user ? <Navigate to={getDefaultDashboardPath(user.role)} replace /> : <Navigate to="/" replace />}
       />
     </Routes>
   );

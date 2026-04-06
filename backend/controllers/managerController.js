@@ -1,0 +1,486 @@
+const pool = require('../config/database');
+const User = require('../models/User');
+const Job = require('../models/Job');
+const Company = require('../models/Company');
+const Application = require('../models/Application');
+const ManagerTestLink = require('../models/ManagerTestLink');
+const ManagerWorkflow = require('../models/ManagerWorkflow');
+const ActivityLog = require('../models/ActivityLog');
+
+const getProfile = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    const profile = await ManagerWorkflow.getManagerProfile(user);
+    return res.status(200).json({
+      message: 'Manager profile fetched successfully',
+      data: profile
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching manager profile', error: error.message });
+  }
+};
+
+const updateProfile = async (req, res) => {
+  try {
+    const { name, phone, department, bio, photo_url } = req.body;
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (name && name.trim()) {
+      await pool.query('UPDATE users SET name = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2', [name.trim(), req.user.id]);
+    }
+
+    await ManagerWorkflow.updateManagerProfile(req.user.id, {
+      phone,
+      department,
+      bio,
+      photo_url
+    });
+
+    const updatedUser = await User.findById(req.user.id);
+    const updatedProfile = await ManagerWorkflow.getManagerProfile(updatedUser);
+    await ActivityLog.record('Manager Updated Profile', 'user', req.user.id);
+
+    return res.status(200).json({
+      message: 'Manager profile updated successfully',
+      data: updatedProfile
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error updating manager profile', error: error.message });
+  }
+};
+
+const getManagerUsers = async (req, res) => {
+  try {
+    const users = await User.getAll();
+    return res.status(200).json({
+      message: 'Users fetched successfully',
+      data: users
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching users', error: error.message });
+  }
+};
+
+const updateUserBlockStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isBlocked } = req.body;
+    const targetUser = await User.findById(id);
+
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (targetUser.id === req.user.id) {
+      return res.status(400).json({ message: 'You cannot block or unblock your own account' });
+    }
+
+    const updatedUser = await User.updateBlockStatus(id, Boolean(isBlocked));
+    await ActivityLog.record(
+      Boolean(isBlocked) ? 'Manager Blocked User' : 'Manager Unblocked User',
+      'user',
+      id
+    );
+
+    const { password, ...safeUser } = updatedUser;
+    return res.status(200).json({
+      message: `User ${isBlocked ? 'blocked' : 'unblocked'} successfully`,
+      data: safeUser
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error updating user block status', error: error.message });
+  }
+};
+
+const getManagerJobs = async (req, res) => {
+  try {
+    const jobs = await Job.getAll();
+    return res.status(200).json({
+      message: 'Jobs fetched successfully',
+      data: jobs
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching jobs', error: error.message });
+  }
+};
+
+const createManagerJob = async (req, res) => {
+  try {
+    const { companyId, title, description, location, salaryMin, salaryMax } = req.body;
+
+    if (!title) {
+      return res.status(400).json({ message: 'title is required' });
+    }
+
+    let selectedCompanyId = companyId ? Number(companyId) : null;
+
+    if (!selectedCompanyId) {
+      const companies = await Company.getAll();
+      selectedCompanyId = companies[0]?.id || null;
+    }
+
+    if (!selectedCompanyId) {
+      return res.status(400).json({ message: 'No company available. Create company first.' });
+    }
+
+    const job = await Job.create(
+      selectedCompanyId,
+      title,
+      description || '',
+      salaryMin || null,
+      salaryMax || null,
+      location || 'Remote'
+    );
+
+    await ActivityLog.record('Manager Created Job', 'job', job.id);
+
+    return res.status(201).json({
+      message: 'Job created successfully',
+      data: job
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error creating job', error: error.message });
+  }
+};
+
+const updateJobStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['open', 'closed'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    const updatedJob = await Job.updateStatus(id, status);
+    if (!updatedJob) {
+      return res.status(404).json({ message: 'Job not found' });
+    }
+
+    await ActivityLog.record('Manager Updated Job Status', 'job', id);
+
+    return res.status(200).json({
+      message: 'Job status updated successfully',
+      data: updatedJob
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error updating job status', error: error.message });
+  }
+};
+
+const getTestLinks = async (req, res) => {
+  try {
+    const testLinks = await ManagerTestLink.getAll();
+    return res.status(200).json({
+      message: 'Test links fetched successfully',
+      data: testLinks
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching test links', error: error.message });
+  }
+};
+
+const createTestLink = async (req, res) => {
+  try {
+    const { linkUrl, linkStatus } = req.body;
+
+    if (!linkUrl) {
+      return res.status(400).json({ message: 'linkUrl is required' });
+    }
+
+    if (linkStatus && !['pending', 'sent', 'completed', 'expired'].includes(linkStatus)) {
+      return res.status(400).json({ message: 'Invalid link status' });
+    }
+
+    const testLink = await ManagerTestLink.create(req.body, req.user.id);
+    await ActivityLog.record('Manager Created Test Link', 'manager_test_link', testLink.id);
+
+    return res.status(201).json({
+      message: 'Test link created successfully',
+      data: testLink
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error creating test link', error: error.message });
+  }
+};
+
+const updateTestLink = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const current = await ManagerTestLink.getById(id);
+
+    if (!current) {
+      return res.status(404).json({ message: 'Test link not found' });
+    }
+
+    if (req.body.linkStatus && !['pending', 'sent', 'completed', 'expired'].includes(req.body.linkStatus)) {
+      return res.status(400).json({ message: 'Invalid link status' });
+    }
+
+    const updated = await ManagerTestLink.update(id, req.body, req.user.id);
+    await ManagerTestLink.createUpdateLog(id, current, updated, req.user.id);
+    await ActivityLog.record('Manager Updated Test Link', 'manager_test_link', id);
+
+    return res.status(200).json({
+      message: 'Test link updated successfully',
+      data: updated
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error updating test link', error: error.message });
+  }
+};
+
+const getTestLinkUpdates = async (req, res) => {
+  try {
+    const updates = await ManagerTestLink.getUpdates();
+    return res.status(200).json({
+      message: 'Test link updates fetched successfully',
+      data: updates
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching test link updates', error: error.message });
+  }
+};
+
+const createInterview = async (req, res) => {
+  try {
+    const { candidateEmail, interviewType, scheduledAt } = req.body;
+
+    if (!candidateEmail || !interviewType || !scheduledAt) {
+      return res.status(400).json({ message: 'candidateEmail, interviewType and scheduledAt are required' });
+    }
+
+    const interview = await ManagerWorkflow.createInterview(req.body, req.user.id);
+
+    await ManagerWorkflow.createInterviewUpdate({
+      interviewId: interview.id,
+      updatedBy: req.user.id,
+      candidateEmail: interview.candidate_email,
+      previousStatus: null,
+      newStatus: 'scheduled',
+      message: `Interview scheduled for ${interview.candidate_email}`
+    });
+
+    await ActivityLog.record('Manager Scheduled Interview', 'interview', interview.id);
+
+    return res.status(201).json({
+      message: 'Interview scheduled successfully',
+      data: interview
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error creating interview', error: error.message });
+  }
+};
+
+const getInterviews = async (req, res) => {
+  try {
+    const interviews = await ManagerWorkflow.getInterviews();
+    return res.status(200).json({
+      message: 'Interviews fetched successfully',
+      data: interviews
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching interviews', error: error.message });
+  }
+};
+
+const updateInterviewStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['scheduled', 'completed', 'rescheduled', 'cancelled'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid interview status' });
+    }
+
+    const current = await ManagerWorkflow.getInterviewById(id);
+    if (!current) {
+      return res.status(404).json({ message: 'Interview not found' });
+    }
+
+    const updated = await ManagerWorkflow.updateInterviewStatus(id, status, req.user.id);
+
+    await ManagerWorkflow.createInterviewUpdate({
+      interviewId: updated.id,
+      updatedBy: req.user.id,
+      candidateEmail: updated.candidate_email,
+      previousStatus: current.status,
+      newStatus: status,
+      message: `Status changed from ${current.status} to ${status}`
+    });
+
+    await ActivityLog.record('Manager Updated Interview Status', 'interview', id);
+
+    return res.status(200).json({
+      message: 'Interview status updated successfully',
+      data: updated
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error updating interview status', error: error.message });
+  }
+};
+
+const getInterviewUpdates = async (req, res) => {
+  try {
+    const updates = await ManagerWorkflow.getInterviewUpdates();
+    return res.status(200).json({
+      message: 'Interview updates fetched successfully',
+      data: updates
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching interview updates', error: error.message });
+  }
+};
+
+const sendOffboardingLetter = async (req, res) => {
+  try {
+    const { candidateEmail } = req.body;
+
+    if (!candidateEmail) {
+      return res.status(400).json({ message: 'candidateEmail is required' });
+    }
+
+    const letter = await ManagerWorkflow.createOffboardingLetter(req.body, req.user.id);
+    await ActivityLog.record('Manager Sent Offboarding Letter', 'offboarding_letter', letter.id);
+
+    return res.status(201).json({
+      message: 'Offboarding letter sent successfully',
+      data: letter
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error sending offboarding letter', error: error.message });
+  }
+};
+
+const getOffboardingLetters = async (req, res) => {
+  try {
+    const letters = await ManagerWorkflow.getOffboardingLetters();
+    return res.status(200).json({
+      message: 'Offboarding letters fetched successfully',
+      data: letters
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching offboarding letters', error: error.message });
+  }
+};
+
+const getManagerStats = async (req, res) => {
+  try {
+    const applications = await Application.getAll();
+    const jobs = await Job.getAll();
+    const testLinks = await ManagerTestLink.getAll();
+    const interviews = await ManagerWorkflow.getInterviews();
+    const offboardingLetters = await ManagerWorkflow.getOffboardingLetters();
+
+    const completedTests = testLinks.filter((item) => item.link_status === 'completed');
+    const completedInterviews = interviews.filter((item) => item.status === 'completed');
+
+    const testCandidates = new Set(
+      completedTests
+        .map((item) => (item.candidate_email || '').toLowerCase())
+        .filter(Boolean)
+    );
+
+    const interviewCandidates = new Set(
+      completedInterviews
+        .map((item) => (item.candidate_email || '').toLowerCase())
+        .filter(Boolean)
+    );
+
+    let clearedBoth = 0;
+    testCandidates.forEach((email) => {
+      if (interviewCandidates.has(email)) {
+        clearedBoth += 1;
+      }
+    });
+
+    return res.status(200).json({
+      message: 'Manager stats fetched successfully',
+      data: {
+        totalApplications: applications.length,
+        totalOpenings: jobs.filter((item) => item.status === 'open').length,
+        clearedTests: completedTests.length,
+        clearedInterviews: completedInterviews.length,
+        clearedBoth,
+        offboardingLettersSent: offboardingLetters.filter((item) => item.status === 'sent').length
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching manager stats', error: error.message });
+  }
+};
+
+const getRecentUpdates = async (req, res) => {
+  try {
+    const testUpdates = await ManagerTestLink.getUpdates();
+    const interviewUpdates = await ManagerWorkflow.getInterviewUpdates();
+    const offboardingLetters = await ManagerWorkflow.getOffboardingLetters();
+
+    const testItems = testUpdates.map((item) => ({
+      id: `test-${item.id}`,
+      type: 'Test',
+      candidate_email: item.candidate_email || 'candidate@hirehub.com',
+      message: item.new_status === 'completed'
+        ? 'Candidate completed exam'
+        : `Candidate test status updated to ${item.new_status || 'N/A'}`,
+      updated_at: item.updated_at
+    }));
+
+    const interviewItems = interviewUpdates.map((item) => ({
+      id: `interview-${item.id}`,
+      type: 'Interview',
+      candidate_email: item.candidate_email || 'candidate@hirehub.com',
+      message: item.message || `Interview status changed to ${item.new_status}`,
+      updated_at: item.updated_at
+    }));
+
+    const offboardingItems = offboardingLetters.map((item) => ({
+      id: `offboarding-${item.id}`,
+      type: 'Offboarding',
+      candidate_email: item.candidate_email,
+      message: 'Offboarding letter sent',
+      updated_at: item.sent_at
+    }));
+
+    const data = [...testItems, ...interviewItems, ...offboardingItems]
+      .sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))
+      .slice(0, 20);
+
+    return res.status(200).json({
+      message: 'Recent updates fetched successfully',
+      data
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching recent updates', error: error.message });
+  }
+};
+
+module.exports = {
+  getProfile,
+  updateProfile,
+  getManagerUsers,
+  updateUserBlockStatus,
+  getManagerJobs,
+  createManagerJob,
+  updateJobStatus,
+  getTestLinks,
+  createTestLink,
+  updateTestLink,
+  getTestLinkUpdates,
+  getInterviews,
+  createInterview,
+  updateInterviewStatus,
+  getInterviewUpdates,
+  getOffboardingLetters,
+  sendOffboardingLetter,
+  getManagerStats,
+  getRecentUpdates
+};

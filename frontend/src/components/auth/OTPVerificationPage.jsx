@@ -3,6 +3,18 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import styles from './OTPVerificationPage.module.css';
 
+const getRoleRoute = (role) => {
+  if (role === 'manager') {
+    return '/manager/dashboard';
+  }
+
+  if (['admin', 'superadmin'].includes(role)) {
+    return '/admin/dashboard';
+  }
+
+  return '/user/home';
+};
+
 const OTPVerificationPage = () => {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
@@ -37,14 +49,8 @@ const OTPVerificationPage = () => {
     setLoading(true);
 
     try {
-      const data = await verifyOTP(userId, otp);
-      const userRole = data?.user?.role;
-
-      if (['admin', 'superadmin'].includes(userRole)) {
-        navigate('/admin/dashboard');
-      } else {
-        navigate('/user/home');
-      }
+      const result = await verifyOTP(userId, otp);
+      navigate(getRoleRoute(result?.user?.role));
     } catch (err) {
       setError(err.response?.data?.message || 'OTP verification failed');
     } finally {
@@ -60,6 +66,7 @@ const OTPVerificationPage = () => {
         <p className={styles.subtitle}>
           Enter the 6-digit OTP sent to <strong>{email}</strong>
         </p>
+        <p className={styles.demoOtp}>Demo OTP: <strong>123456</strong></p>
 
         {error && <div className={styles.alert}>{error}</div>}
 
@@ -75,24 +82,16 @@ const OTPVerificationPage = () => {
               required
               className={styles.otpInput}
             />
-            <p className={styles.hint}>Check your email for the OTP code</p>
+            <p className={styles.hint}>Use the demo OTP shown above</p>
           </div>
 
-          <button
-            type="submit"
-            className={styles.submitBtn}
-            disabled={loading}
-          >
+          <button type="submit" className={styles.submitBtn} disabled={loading}>
             {loading ? 'Verifying...' : 'Verify OTP'}
           </button>
         </form>
 
-        <button
-          type="button"
-          className={styles.backBtn}
-          onClick={() => navigate('/login')}
-        >
-          ← Back to Login
+        <button type="button" className={styles.backBtn} onClick={() => navigate('/login')}>
+          Back to Login
         </button>
       </div>
     </div>

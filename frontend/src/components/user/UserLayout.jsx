@@ -19,7 +19,8 @@ const UserLayout = ({ children, currentPage, pageTitle, currentSubSection }) => 
       { key: 'projects', label: 'Projects' },
       { key: 'accomplishments', label: 'Accomplishments' },
       { key: 'extracurricular', label: 'Extra Curricular' },
-      { key: 'resume', label: 'Resume' }
+      { key: 'resume', label: 'Resume' },
+      { key: 'view-saved', label: 'View Saved Data' }
     ],
     []
   );

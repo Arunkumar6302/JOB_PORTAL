@@ -18,7 +18,7 @@ const RegisterPage = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value
     }));
@@ -37,7 +37,6 @@ const RegisterPage = () => {
 
     try {
       await register(formData.name, formData.email, formData.password, formData.role);
-      // Redirect to login after successful registration
       navigate('/login', { state: { message: 'Registration successful. Please login.' } });
     } catch (err) {
       setError(err.response?.data?.message || 'Registration failed');
@@ -102,34 +101,29 @@ const RegisterPage = () => {
             />
           </div>
 
-          <p className={styles.roleHint}>Registering as: Job Seeker (User)</p>
+          <div className={styles.formGroup}>
+            <label>Role</label>
+            <select name="role" value={formData.role} onChange={handleChange}>
+              <option value="user">User</option>
+              <option value="manager">Manager</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
 
-          <button
-            type="submit"
-            className={styles.submitBtn}
-            disabled={loading}
-          >
+          <button type="submit" className={styles.submitBtn} disabled={loading}>
             {loading ? 'Registering...' : 'Register'}
           </button>
         </form>
 
         <p className={styles.footerText}>
           Already have an account?
-          <button
-            type="button"
-            className={styles.linkBtn}
-            onClick={() => navigate('/login')}
-          >
+          <button type="button" className={styles.linkBtn} onClick={() => navigate('/login')}>
             Login here
           </button>
         </p>
 
-        <button
-          type="button"
-          className={styles.backBtn}
-          onClick={() => navigate('/')}
-        >
-          ← Back to Home
+        <button type="button" className={styles.backBtn} onClick={() => navigate('/')}>
+          Back to Home
         </button>
       </div>
     </div>
