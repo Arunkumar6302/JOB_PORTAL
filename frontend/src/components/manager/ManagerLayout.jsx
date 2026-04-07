@@ -29,7 +29,7 @@ const ManagerLayout = ({ activeSection, onChangeSection, children }) => {
     <div className={styles.container}>
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : styles.closed}`}>
         <div className={styles.sidebarHeader}>
-          <h1 className={styles.logo}>HireHub</h1>
+          <h1 className={styles.logo}>Shnoor HireHub</h1>
           <button
             className={styles.toggleBtn}
             onClick={() => setSidebarOpen(!sidebarOpen)}

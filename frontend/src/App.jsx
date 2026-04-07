@@ -263,7 +263,6 @@ const OpeningPageWrapper = () => {
 
   return (
     <OpeningPage
-      onGetStarted={() => navigate('/login')}
       onLogin={() => navigate('/login')}
       onRegister={() => navigate('/register')}
     />

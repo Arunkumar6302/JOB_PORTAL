@@ -4,7 +4,7 @@ import styles from './Settings.module.css';
 
 const Settings = () => {
   const [settings, setSettings] = useState({
-    platformName: 'HireHub',
+    platformName: 'Shnoor HireHub',
     companyEmail: 'admin@hirehub.com',
     companyPhone: '+1 (555) 123-4567',
     address: '123 Business Street, Suite 100, New York, NY 10001',
@@ -95,7 +95,7 @@ const Settings = () => {
                 onClick={() => {
                   setEdited(false);
                   setSettings({
-                    platformName: 'HireHub',
+                    platformName: 'Shnoor HireHub',
                     companyEmail: 'admin@hirehub.com',
                     companyPhone: '+1 (555) 123-4567',
                     address: '123 Business Street, Suite 100, New York, NY 10001',

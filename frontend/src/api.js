@@ -85,6 +85,10 @@ export const logsAPI = {
   getAll: () => api.get('/logs')
 };
 
+export const contactAPI = {
+  sendMessage: (data) => api.post('/contact', data)
+};
+
 export const managerAPI = {
   getProfile: () => api.get('/manager/profile'),
   updateProfile: (data) => api.put('/manager/profile', data),
