@@ -1,6 +1,22 @@
 import axios from 'axios';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001/api';
+const normalizeApiBaseUrl = (value) => {
+  const fallback = 'http://localhost:5001/api';
+  if (!value || typeof value !== 'string') {
+    return fallback;
+  }
+
+  const trimmed = value.trim().replace(/\/+$/, '');
+  if (!trimmed) {
+    return fallback;
+  }
+
+  return /\/api$/i.test(trimmed) ? trimmed : `${trimmed}/api`;
+};
+
+const API_BASE_URL = normalizeApiBaseUrl(
+  import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL
+);
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -79,6 +95,10 @@ export const managerAPI = {
   getJobs: () => api.get('/manager/jobs'),
   createJob: (data) => api.post('/manager/jobs', data),
   updateJobStatus: (id, status) => api.put(`/manager/jobs/${id}/status`, { status }),
+
+  getApplications: () => api.get('/manager/applications'),
+  updateApplicationStatus: (id, status) => api.put(`/manager/applications/${id}/status`, { status }),
+  shortlistAndSendTestLink: (id, data) => api.post(`/manager/applications/${id}/shortlist-test`, data),
 
   getTestLinks: () => api.get('/manager/test-links'),
   createTestLink: (data) => api.post('/manager/test-links', data),

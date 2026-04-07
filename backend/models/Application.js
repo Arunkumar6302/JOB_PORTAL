@@ -24,6 +24,25 @@ class Application {
     return result.rows;
   }
 
+  static async getById(id) {
+    const query = `
+      SELECT
+        a.*,
+        j.title AS job_title,
+        c.name AS company_name,
+        u.name AS user_name,
+        u.email AS user_email
+      FROM applications a
+      LEFT JOIN jobs j ON a.job_id = j.id
+      LEFT JOIN companies c ON j.company_id = c.id
+      LEFT JOIN users u ON a.user_id = u.id
+      WHERE a.id = $1
+      LIMIT 1
+    `;
+    const result = await pool.query(query, [id]);
+    return result.rows[0];
+  }
+
   static async updateStatus(id, status) {
     const query = 'UPDATE applications SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *';
     const result = await pool.query(query, [status, id]);

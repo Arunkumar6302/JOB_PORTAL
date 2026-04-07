@@ -8,6 +8,7 @@ const menuItems = [
   { key: 'profile', label: 'Manager Profile' },
   { key: 'users', label: 'User Management' },
   { key: 'jobs', label: 'Job Updates' },
+  { key: 'applications', label: 'Applications' },
   { key: 'interviews', label: 'Interviews' },
   { key: 'test-links', label: 'Test Links' },
   { key: 'offboarding', label: 'Offboarding Letters' },

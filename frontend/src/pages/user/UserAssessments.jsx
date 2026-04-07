@@ -45,6 +45,18 @@ const UserAssessments = () => {
                       ? `Window: ${new Date(item.startTime).toLocaleString()} - ${new Date(item.endTime).toLocaleString()}`
                       : 'Assessment time not released by manager yet'}
                   </p>
+                  {item.testLink && (
+                    <p className={styles.itemMeta}>
+                      Test Link:{' '}
+                      <a href={item.testLink} target="_blank" rel="noreferrer" className={styles.inlineLink}>
+                        Open Assessment
+                      </a>
+                    </p>
+                  )}
+                  {item.notes && <p className={styles.itemMeta}>Notes: {item.notes}</p>}
+                  {item.updatedAt && (
+                    <p className={styles.itemMeta}>Updated: {new Date(item.updatedAt).toLocaleString()}</p>
+                  )}
                   <span className={styles.badge}>{item.status.replaceAll('_', ' ')}</span>
                 </div>
               ))}

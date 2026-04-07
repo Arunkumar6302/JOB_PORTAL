@@ -7,6 +7,9 @@ const {
   getManagerJobs,
   createManagerJob,
   updateJobStatus,
+  getManagerApplications,
+  updateManagerApplicationStatus,
+  shortlistAndSendTestLink,
   getTestLinks,
   createTestLink,
   updateTestLink,
@@ -34,6 +37,9 @@ router.put('/users/:id/block-status', updateUserBlockStatus);
 router.get('/jobs', getManagerJobs);
 router.post('/jobs', createManagerJob);
 router.put('/jobs/:id/status', updateJobStatus);
+router.get('/applications', getManagerApplications);
+router.put('/applications/:id/status', updateManagerApplicationStatus);
+router.post('/applications/:id/shortlist-test', shortlistAndSendTestLink);
 
 router.get('/test-links', getTestLinks);
 router.post('/test-links', createTestLink);

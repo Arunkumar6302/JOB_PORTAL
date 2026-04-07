@@ -2,6 +2,7 @@ const User = require('../models/User');
 const Job = require('../models/Job');
 const Application = require('../models/Application');
 const UserProfile = require('../models/UserProfile');
+const ManagerTestLink = require('../models/ManagerTestLink');
 
 const getMyProfile = async (req, res) => {
   try {
@@ -129,15 +130,55 @@ const getMyHomeData = async (req, res) => {
 
 const getMyNotifications = async (req, res) => {
   try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     const applications = await Application.getByUserId(req.user.id);
+    const testLinks = await ManagerTestLink.getForUser(req.user.id, user.email);
+
+    const latestTestLinkByApplicationId = new Map();
+    const latestOrphanByJobId = new Map();
+    const orphanTestLinks = [];
+
+    testLinks.forEach((link) => {
+      if (link.application_id) {
+        if (!latestTestLinkByApplicationId.has(link.application_id)) {
+          latestTestLinkByApplicationId.set(link.application_id, link);
+        }
+        return;
+      }
+
+      orphanTestLinks.push(link);
+      if (link.job_id && !latestOrphanByJobId.has(link.job_id)) {
+        latestOrphanByJobId.set(link.job_id, link);
+      }
+    });
+
+    const usedOrphanLinkIds = new Set();
 
     const notifications = applications.map((application) => {
       let title = 'Application Submitted';
       let description = `Your application for ${application.job_title} at ${application.company_name} is submitted.`;
+      const testLink = latestTestLinkByApplicationId.get(application.id) || latestOrphanByJobId.get(application.job_id);
+      const usedOrphanLink = !latestTestLinkByApplicationId.get(application.id) && testLink;
+      let createdAt = application.updated_at || application.applied_at;
 
       if (application.status === 'selected') {
-        title = 'Shortlisted for Next Round';
-        description = `You are shortlisted for ${application.job_title}. Interview/test schedule will be shared by manager.`;
+        title = 'Shortlisted for Test';
+        description = `You are shortlisted for ${application.job_title}.`;
+
+        if (testLink?.link_url) {
+          title = 'Shortlisted - Test Link Sent';
+          description = `You are shortlisted for ${application.job_title}. Assessment link: ${testLink.link_url}`;
+          createdAt = testLink.updated_at || createdAt;
+          if (usedOrphanLink?.id) {
+            usedOrphanLinkIds.add(usedOrphanLink.id);
+          }
+        } else {
+          description = `${description} Test link will be shared by manager shortly.`;
+        }
       }
 
       if (application.status === 'rejected') {
@@ -146,17 +187,30 @@ const getMyNotifications = async (req, res) => {
       }
 
       return {
-        id: application.id,
+        id: `application-${application.id}`,
         title,
         description,
         status: application.status,
-        createdAt: application.updated_at || application.applied_at
+        createdAt
       };
     });
 
+    const linkNotifications = orphanTestLinks
+      .filter((link) => !usedOrphanLinkIds.has(link.id))
+      .map((link) => ({
+        id: `assessment-${link.id}`,
+        title: 'Assessment Link Shared',
+        description: `Manager shared an assessment link for ${link.job_title || 'your application'}: ${link.link_url}`,
+        status: link.link_status || 'sent',
+        createdAt: link.updated_at || link.created_at
+      }));
+
+    const data = [...notifications, ...linkNotifications]
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
     res.status(200).json({
       message: 'Notifications fetched successfully',
-      data: notifications
+      data
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching notifications', error: error.message });
@@ -187,17 +241,45 @@ const getMyInterviews = async (req, res) => {
 
 const getMyAssessments = async (req, res) => {
   try {
+    const user = await User.findById(req.user.id);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
     const applications = await Application.getByUserId(req.user.id);
+    const testLinks = await ManagerTestLink.getForUser(req.user.id, user.email);
+
+    const latestTestLinkByApplicationId = new Map();
+    const latestOrphanByJobId = new Map();
+    testLinks.forEach((link) => {
+      if (link.application_id && !latestTestLinkByApplicationId.has(link.application_id)) {
+        latestTestLinkByApplicationId.set(link.application_id, link);
+        return;
+      }
+
+      if (link.job_id && !latestOrphanByJobId.has(link.job_id)) {
+        latestOrphanByJobId.set(link.job_id, link);
+      }
+    });
+
     const assessments = applications
       .filter((item) => item.status === 'selected')
-      .map((item) => ({
-        id: item.id,
-        jobTitle: item.job_title,
-        companyName: item.company_name,
-        status: 'not_scheduled',
-        startTime: null,
-        endTime: null
-      }));
+      .map((item) => {
+        const link = latestTestLinkByApplicationId.get(item.id) || latestOrphanByJobId.get(item.job_id);
+        return {
+          id: item.id,
+          jobTitle: item.job_title,
+          companyName: item.company_name,
+          status: link?.link_status === 'sent'
+            ? 'test_link_sent'
+            : (link?.link_status ? `test_${link.link_status}` : 'not_scheduled'),
+          startTime: null,
+          endTime: null,
+          testLink: link?.link_url || null,
+          notes: link?.notes || null,
+          updatedAt: link?.updated_at || item.updated_at || item.applied_at
+        };
+      });
 
     res.status(200).json({
       message: 'Assessment data fetched successfully',

@@ -176,6 +176,105 @@ const updateJobStatus = async (req, res) => {
   }
 };
 
+const getManagerApplications = async (req, res) => {
+  try {
+    const applications = await Application.getAll();
+    return res.status(200).json({
+      message: 'Applications fetched successfully',
+      data: applications
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error fetching applications', error: error.message });
+  }
+};
+
+const updateManagerApplicationStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!['applied', 'selected', 'rejected'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status value' });
+    }
+
+    const current = await Application.getById(id);
+    if (!current) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    const updatedApplication = await Application.updateStatus(id, status);
+    await ActivityLog.record('Manager Updated Application Status', 'application', id);
+
+    return res.status(200).json({
+      message: 'Application status updated successfully',
+      data: updatedApplication
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error updating application status', error: error.message });
+  }
+};
+
+const shortlistAndSendTestLink = async (req, res) => {
+  try {
+    const applicationId = Number(req.params.id);
+    const { linkUrl, notes, linkStatus = 'sent' } = req.body;
+
+    if (Number.isNaN(applicationId)) {
+      return res.status(400).json({ message: 'Invalid application id' });
+    }
+
+    if (!linkUrl || !String(linkUrl).trim()) {
+      return res.status(400).json({ message: 'linkUrl is required' });
+    }
+
+    if (!['pending', 'sent', 'completed', 'expired'].includes(linkStatus)) {
+      return res.status(400).json({ message: 'Invalid link status' });
+    }
+
+    const application = await Application.getById(applicationId);
+    if (!application) {
+      return res.status(404).json({ message: 'Application not found' });
+    }
+
+    let updatedApplication = application;
+    if (application.status !== 'selected') {
+      updatedApplication = await Application.updateStatus(applicationId, 'selected');
+      await ActivityLog.record('Manager Shortlisted Candidate', 'application', applicationId);
+    }
+
+    const payload = {
+      applicationId: applicationId,
+      jobId: application.job_id,
+      candidateEmail: application.user_email,
+      linkUrl: String(linkUrl).trim(),
+      notes: notes || `Assessment link shared for ${application.job_title || 'job application'}`,
+      linkStatus
+    };
+
+    const existingLink = await ManagerTestLink.getLatestByApplicationId(applicationId);
+    let testLink;
+
+    if (existingLink) {
+      testLink = await ManagerTestLink.update(existingLink.id, payload, req.user.id);
+      await ManagerTestLink.createUpdateLog(existingLink.id, existingLink, testLink, req.user.id);
+    } else {
+      testLink = await ManagerTestLink.create(payload, req.user.id);
+    }
+
+    await ActivityLog.record('Manager Sent Test Link', 'manager_test_link', testLink.id);
+
+    return res.status(200).json({
+      message: 'Candidate shortlisted and test link sent successfully',
+      data: {
+        application: updatedApplication,
+        testLink
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error shortlisting candidate and sending test link', error: error.message });
+  }
+};
+
 const getTestLinks = async (req, res) => {
   try {
     const testLinks = await ManagerTestLink.getAll();
@@ -471,6 +570,9 @@ module.exports = {
   getManagerJobs,
   createManagerJob,
   updateJobStatus,
+  getManagerApplications,
+  updateManagerApplicationStatus,
+  shortlistAndSendTestLink,
   getTestLinks,
   createTestLink,
   updateTestLink,

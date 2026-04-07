@@ -4,6 +4,9 @@ import { useAuth } from '../context/AuthContext';
 import ManagerLayout from '../components/manager/ManagerLayout';
 import styles from './ManagerDashboard.module.css';
 
+const PROFILE_PLACEHOLDER =
+  'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 120 120%22%3E%3Cdefs%3E%3ClinearGradient id=%22g%22 x1=%220%22 y1=%220%22 x2=%221%22 y2=%221%22%3E%3Cstop offset=%220%25%22 stop-color=%22%23e2e8f0%22/%3E%3Cstop offset=%22100%25%22 stop-color=%22%23cbd5e1%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width=%22120%22 height=%22120%22 rx=%2260%22 fill=%22url(%23g)%22/%3E%3Ccircle cx=%2260%22 cy=%2248%22 r=%2222%22 fill=%22%2394a3b8%22/%3E%3Crect x=%2230%22 y=%2278%22 width=%2260%22 height=%2228%22 rx=%2214%22 fill=%22%2394a3b8%22/%3E%3C/svg%3E';
+
 const ManagerDashboard = () => {
   const { user } = useAuth();
   const [activeSection, setActiveSection] = useState('dashboard');
@@ -11,6 +14,7 @@ const ManagerDashboard = () => {
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
   const [jobs, setJobs] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [testLinks, setTestLinks] = useState([]);
   const [interviews, setInterviews] = useState([]);
   const [offboardingLetters, setOffboardingLetters] = useState([]);
@@ -72,6 +76,7 @@ const ManagerDashboard = () => {
         statsRes,
         usersRes,
         jobsRes,
+        applicationsRes,
         linksRes,
         interviewsRes,
         offboardingRes,
@@ -81,6 +86,7 @@ const ManagerDashboard = () => {
         managerAPI.getStats(),
         managerAPI.getUsers(),
         managerAPI.getJobs(),
+        managerAPI.getApplications(),
         managerAPI.getTestLinks(),
         managerAPI.getInterviews(),
         managerAPI.getOffboardingLetters(),
@@ -99,6 +105,7 @@ const ManagerDashboard = () => {
       setStats(statsRes.data.data);
       setUsers(usersRes.data.data);
       setJobs(jobsRes.data.data);
+      setApplications(applicationsRes.data.data);
       setTestLinks(linksRes.data.data);
       setInterviews(interviewsRes.data.data);
       setOffboardingLetters(offboardingRes.data.data);
@@ -169,6 +176,43 @@ const ManagerDashboard = () => {
       await loadManagerData();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update job status');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleApplicationStatusChange = async (application, status) => {
+    setSaving(true);
+    setError('');
+    try {
+      await managerAPI.updateApplicationStatus(application.id, status);
+      await loadManagerData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update application status');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleShortlistAndSendTestLink = async (application) => {
+    const linkUrl = window.prompt(`Enter test link URL for ${application.user_email}:`);
+    if (!linkUrl) {
+      return;
+    }
+
+    const notes = window.prompt('Optional notes for candidate:') || '';
+
+    setSaving(true);
+    setError('');
+    try {
+      await managerAPI.shortlistAndSendTestLink(application.id, {
+        linkUrl,
+        notes,
+        linkStatus: 'sent'
+      });
+      await loadManagerData();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to shortlist candidate and send test link');
     } finally {
       setSaving(false);
     }
@@ -329,7 +373,7 @@ const ManagerDashboard = () => {
           <div className={styles.profileEditor}>
             <div className={styles.profilePhotoBlock}>
               <img
-                src={profileForm.photo_url || 'https://via.placeholder.com/120?text=Photo'}
+                src={profileForm.photo_url || PROFILE_PLACEHOLDER}
                 alt="Profile"
                 className={styles.profilePhoto}
               />
@@ -421,6 +465,67 @@ const ManagerDashboard = () => {
               </tbody>
             </table>
           </div>
+        </div>
+      );
+    }
+
+    if (activeSection === 'applications') {
+      return (
+        <div className={styles.card}>
+          <h3>Applications (Shared with Admin)</h3>
+          <table className={styles.table}>
+            <thead>
+              <tr>
+                <th>Job</th>
+                <th>Candidate</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {applications.length === 0 ? (
+                <tr><td colSpan="5" className={styles.empty}>No applications found</td></tr>
+              ) : (
+                applications.map((application) => (
+                  <tr key={application.id}>
+                    <td>{application.job_title}</td>
+                    <td>{application.user_name}</td>
+                    <td>{application.user_email}</td>
+                    <td>{application.status}</td>
+                    <td>
+                      <div className={styles.actionsRow}>
+                        <button
+                          type="button"
+                          className={styles.btnSuccess}
+                          disabled={saving || application.status === 'selected'}
+                          onClick={() => handleApplicationStatusChange(application, 'selected')}
+                        >
+                          Shortlist
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.btnPrimary}
+                          disabled={saving}
+                          onClick={() => handleShortlistAndSendTestLink(application)}
+                        >
+                          Shortlist + Send Test Link
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.btnDanger}
+                          disabled={saving || application.status === 'rejected'}
+                          onClick={() => handleApplicationStatusChange(application, 'rejected')}
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
       );
     }

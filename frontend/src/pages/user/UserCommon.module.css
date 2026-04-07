@@ -41,6 +41,16 @@
   font-size: 12px;
 }
 
+.inlineLink {
+  color: #0b63ce;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.inlineLink:hover {
+  text-decoration: underline;
+}
+
 .badge {
   text-transform: capitalize;
   display: inline-block;
