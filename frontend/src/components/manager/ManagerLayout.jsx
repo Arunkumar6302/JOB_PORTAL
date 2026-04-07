@@ -29,7 +29,7 @@ const ManagerLayout = ({ activeSection, onChangeSection, children }) => {
     <div className={styles.container}>
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : styles.closed}`}>
         <div className={styles.sidebarHeader}>
-          <h1 className={styles.logo}>Shnoor HireHub</h1>
+          {sidebarOpen && <h1 className={styles.logo}>Shnoor HireHub</h1>}
           <button
             className={styles.toggleBtn}
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -67,7 +67,16 @@ const ManagerLayout = ({ activeSection, onChangeSection, children }) => {
 
       <main className={styles.main}>
         <header className={styles.header}>
-          <h2>Manager Dashboard</h2>
+          <div className={styles.headerLeft}>
+            <button 
+              className={styles.mobileToggle}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              type="button"
+            >
+              ☰
+            </button>
+            <h2>Manager Dashboard</h2>
+          </div>
           <div className={styles.headerRight}>
             <span className={styles.userBadge}>{user?.role?.toUpperCase() || 'MANAGER'}</span>
           </div>

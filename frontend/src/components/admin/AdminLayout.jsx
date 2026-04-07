@@ -29,9 +29,9 @@ const AdminLayout = ({ children, currentPage, pageTitle }) => {
       {/* Sidebar */}
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : styles.closed}`}>
         <div className={styles.sidebarHeader}>
-          <h1 className={styles.logo}>Shnoor HireHub</h1>
+          {sidebarOpen && <h1 className={styles.logo}>Shnoor HireHub</h1>}
           <button
-            className={styles.toggleBtn}
+            className={`${styles.toggleBtn} ${!sidebarOpen ? styles.closedToggle : ''}`}
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
             {sidebarOpen ? '✕' : '☰'}
@@ -67,7 +67,15 @@ const AdminLayout = ({ children, currentPage, pageTitle }) => {
       {/* Main Content */}
       <main className={styles.main}>
         <header className={styles.header}>
-          <h2>{pageTitle || currentPage.split('/').pop().toUpperCase()}</h2>
+          <div className={styles.headerLeft}>
+            <button 
+              className={styles.mobileToggle}
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+            >
+              ☰
+            </button>
+            <h2>{pageTitle || currentPage.split('/').pop().toUpperCase()}</h2>
+          </div>
           <div className={styles.headerRight}>
             <span className={styles.userBadge}>{user?.role?.toUpperCase()}</span>
           </div>

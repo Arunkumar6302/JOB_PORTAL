@@ -7,7 +7,7 @@ const getDashboardStats = async (req, res) => {
     const totalUsers = await pool.query('SELECT COUNT(*) as count FROM users');
     const totalJobs = await pool.query('SELECT COUNT(*) as count FROM jobs');
     const totalApplications = await pool.query('SELECT COUNT(*) as count FROM applications');
-    const totalRevenue = await pool.query('SELECT COALESCE(SUM(amount), 0) as total FROM subscriptions');
+    const totalRevenue = await pool.query('SELECT COALESCE(SUM(price), 0) as total FROM subscriptions');
 
     const stats = {
       totalCompanies: parseInt(totalCompanies.rows[0].count),
