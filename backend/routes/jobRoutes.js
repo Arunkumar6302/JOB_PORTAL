@@ -6,9 +6,9 @@ const {
   updateJobStatus,
   deleteJob
 } = require('../controllers/jobController');
-const { authenticateSuperAdmin } = require('../middleware/authMiddleware');
+const { authenticateAdmin } = require('../middleware/authMiddleware');
 
-router.use(authenticateSuperAdmin);
+router.use(authenticateAdmin);
 
 router.get('/', getAllJobs);
 router.get('/:id', getJobById);

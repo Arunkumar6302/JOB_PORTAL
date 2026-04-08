@@ -301,7 +301,12 @@ const ManagerDashboard = () => {
             <tbody>{visibleUsers.map((u) => (
               <tr key={u.id}>
                 <td>{u.name}</td><td>{u.email}</td><td>{u.role}</td><td>{u.is_blocked ? 'Blocked' : 'Active'}</td>
-                <td><button type="button" className={u.is_blocked ? styles.btnSuccess : styles.btnDanger} disabled={saving || u.id === user?.id} onClick={() => withSave(() => managerAPI.updateUserBlockStatus(u.id, !u.is_blocked), 'Failed to update user status')}>{u.is_blocked ? 'Unblock' : 'Block'}</button></td>
+                <td>
+                  <div className={styles.actionsRow}>
+                    <button type="button" className={u.is_blocked ? styles.btnSuccess : styles.btnDanger} disabled={saving || u.id === user?.id} onClick={() => withSave(() => managerAPI.updateUserBlockStatus(u.id, !u.is_blocked), 'Failed to update user status')}>{u.is_blocked ? 'Unblock' : 'Block'}</button>
+                    <button type="button" className={styles.btnDanger} disabled={saving || u.id === user?.id} onClick={() => { if (window.confirm('Are you sure you want to delete this user?')) withSave(() => managerAPI.deleteUser(u.id), 'Failed to delete user'); }}>Delete</button>
+                  </div>
+                </td>
               </tr>
             ))}</tbody>
           </table>

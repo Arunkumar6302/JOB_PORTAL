@@ -4,9 +4,9 @@ const {
   getDashboardStats,
   getDashboardCharts
 } = require('../controllers/dashboardController');
-const { authenticateSuperAdmin } = require('../middleware/authMiddleware');
+const { authenticateAdmin } = require('../middleware/authMiddleware');
 
-router.use(authenticateSuperAdmin);
+router.use(authenticateAdmin);
 
 router.get('/stats', getDashboardStats);
 router.get('/charts', getDashboardCharts);

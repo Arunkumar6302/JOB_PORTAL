@@ -4,9 +4,9 @@ const {
   getAllApplications,
   updateApplicationStatus
 } = require('../controllers/applicationController');
-const { authenticateSuperAdmin } = require('../middleware/authMiddleware');
+const { authenticateAdmin } = require('../middleware/authMiddleware');
 
-router.use(authenticateSuperAdmin);
+router.use(authenticateAdmin);
 
 router.get('/', getAllApplications);
 router.put('/:id/status', updateApplicationStatus);

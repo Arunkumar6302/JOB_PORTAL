@@ -100,6 +100,7 @@ export const managerAPI = {
 
   getUsers: () => api.get('/manager/users'),
   updateUserBlockStatus: (id, isBlocked) => api.put(`/manager/users/${id}/block-status`, { isBlocked }),
+  deleteUser: (id) => api.delete(`/manager/users/${id}`),
 
   getJobs: () => api.get('/manager/jobs'),
   createJob: (data) => api.post('/manager/jobs', data),

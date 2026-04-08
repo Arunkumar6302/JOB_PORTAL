@@ -197,6 +197,30 @@ const updateUserBlockStatus = async (req, res) => {
   }
 };
 
+const deleteManagerUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const targetUser = await User.findById(id);
+
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    if (targetUser.id === req.user.id) {
+      return res.status(400).json({ message: 'You cannot delete your own account' });
+    }
+
+    await User.delete(id);
+    await ActivityLog.record('Manager Deleted User', 'user', id);
+
+    return res.status(200).json({
+      message: 'User deleted successfully'
+    });
+  } catch (error) {
+    return res.status(500).json({ message: 'Error deleting user', error: error.message });
+  }
+};
+
 const getManagerJobs = async (req, res) => {
   try {
     const jobs = await Job.getAll();
@@ -914,5 +938,6 @@ module.exports = {
   getOffboardingLetters,
   sendOffboardingLetter,
   getManagerStats,
-  getRecentUpdates
+  getRecentUpdates,
+  deleteManagerUser
 };

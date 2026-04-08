@@ -1,3 +1,20 @@
+-- DROP TABLES IF THEY EXIST
+DROP TABLE IF EXISTS manager_interview_updates CASCADE;
+DROP TABLE IF EXISTS manager_interviews CASCADE;
+DROP TABLE IF EXISTS manager_offboarding_letters CASCADE;
+DROP TABLE IF EXISTS manager_test_link_updates CASCADE;
+DROP TABLE IF EXISTS manager_test_links CASCADE;
+DROP TABLE IF EXISTS manager_profiles CASCADE;
+DROP TABLE IF EXISTS user_profiles CASCADE;
+DROP TABLE IF EXISTS applications CASCADE;
+DROP TABLE IF EXISTS subscriptions CASCADE;
+DROP TABLE IF EXISTS jobs CASCADE;
+DROP TABLE IF EXISTS companies CASCADE;
+DROP TABLE IF EXISTS otp_verifications CASCADE;
+DROP TABLE IF EXISTS settings CASCADE;
+DROP TABLE IF EXISTS admin_activity_logs CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
 -- Create all tables
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
@@ -34,11 +51,14 @@ CREATE TABLE user_profiles (
 CREATE TABLE companies (
   id SERIAL PRIMARY KEY,
   name VARCHAR(100) NOT NULL,
+  owner_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
-  phone VARCHAR(15),
-  industry VARCHAR(50),
+  phone VARCHAR(20),
+  website VARCHAR(255),
+  industry VARCHAR(100),
   location VARCHAR(100),
   status VARCHAR(50) CHECK(status IN ('pending', 'approved', 'rejected', 'blocked')) DEFAULT 'pending',
+  description TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -82,11 +102,12 @@ CREATE TABLE subscriptions (
   id SERIAL PRIMARY KEY,
   company_id INTEGER NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
   plan_name VARCHAR(50),
-  price DECIMAL(10, 2),
-  job_slots INTEGER,
+  amount DECIMAL(10, 2),
+  payment_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  expiry_date TIMESTAMP,
   status VARCHAR(50) CHECK(status IN ('active', 'inactive')) DEFAULT 'active',
-  start_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  end_date TIMESTAMP
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE otp_verifications (
@@ -99,14 +120,20 @@ CREATE TABLE otp_verifications (
 
 CREATE TABLE settings (
   id SERIAL PRIMARY KEY,
-  setting_key VARCHAR(100) UNIQUE NOT NULL,
-  setting_value TEXT,
+  platform_name VARCHAR(255) NOT NULL DEFAULT 'Shnoor Job Portal',
+  tagline VARCHAR(255) DEFAULT 'Find your dream job today',
+  hero_title VARCHAR(255) DEFAULT 'Your Future Starts Here',
+  logo_url TEXT,
+  company_email VARCHAR(100),
+  company_phone VARCHAR(20),
+  address TEXT,
+  footer_text TEXT DEFAULT '© 2026 Shnoor Job Portal. All Rights Reserved.',
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE admin_activity_logs (
   id SERIAL PRIMARY KEY,
-  admin_id INTEGER NOT NULL REFERENCES users(id),
+  admin_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   action VARCHAR(100),
   description TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -209,13 +236,4 @@ CREATE INDEX idx_manager_interviews_job_id ON manager_interviews(job_id);
 CREATE INDEX idx_manager_interview_updates_interview_id ON manager_interview_updates(interview_id);
 CREATE INDEX idx_manager_offboarding_job_id ON manager_offboarding_letters(job_id);
 
--- Insert super admin user
-('Super Admin', 'admin@hirehub.com', '$2b$10$Capc9Pa2mw7Ad4CG2qj1hOl2n7KkLKZxCiGypbWeRo/qNF.QFkpJm', 'superadmin');
-
--- Insert manager user (password: Manager12)
-INSERT INTO users (name, email, password, role) VALUES
-('Portal Manager', 'manager@hirehub.com', '$2b$10$tjv/DCqxM6Hc4gCxymyOyOyqlYKPyvGVTiy8R/x7o4BvjCd1AMyju', 'manager');
-
--- Insert official super admin
-INSERT INTO users (name, email, password, role) VALUES
-('Official Super Admin', 'superadmin@shnoorjobportal.com', '$2b$10$7LhI6i6RJWZC4Y8.7q5Dte.G5Ws3H7.8K0M9N1O2P3Q4R5S6T7U8V9W', 'superadmin');
+-- Seed data is managed by separate scripts

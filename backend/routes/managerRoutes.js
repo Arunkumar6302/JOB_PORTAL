@@ -23,7 +23,8 @@ const {
   getOffboardingLetters,
   sendOffboardingLetter,
   getManagerStats,
-  getRecentUpdates
+  getRecentUpdates,
+  deleteManagerUser
 } = require('../controllers/managerController');
 const { authenticateRoles } = require('../middleware/authMiddleware');
 
@@ -35,6 +36,7 @@ router.get('/profile', getProfile);
 router.put('/profile', updateProfile);
 router.get('/users', getManagerUsers);
 router.put('/users/:id/block-status', updateUserBlockStatus);
+router.delete('/users/:id', deleteManagerUser);
 
 router.get('/jobs', getManagerJobs);
 router.post('/jobs', createManagerJob);

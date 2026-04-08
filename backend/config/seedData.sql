@@ -23,6 +23,8 @@ VALUES
   (12, 'Ava Mitchell', 'ava.mitchell@talentmail.co', '$2a$10$Y0sH.XH9KGt8V9Z6ZrzM.O7ZI8NxJH9Z6C6V4R3D7Q8F8K6Y9E7Z6', 'user', FALSE, '2026-02-16 10:30:00', '2026-02-16 10:30:00'),
   (13, 'Noah White', 'noah.white@hiremail.co', '$2a$10$Y0sH.XH9KGt8V9Z6ZrzM.O7ZI8NxJH9Z6C6V4R3D7Q8F8K6Y9E7Z6', 'user', FALSE, '2026-02-20 11:00:00', '2026-02-20 11:00:00')
 ON CONFLICT (id) DO NOTHING;
+-- Reset user id sequence
+SELECT setval('users_id_seq', (SELECT max(id) FROM users));
 
 -- Insert Admin User (password: 'admin123')
 INSERT INTO users (name, email, password, role)
