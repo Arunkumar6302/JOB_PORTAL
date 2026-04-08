@@ -4,7 +4,7 @@ CREATE TABLE users (
   name VARCHAR(100) NOT NULL,
   email VARCHAR(100) UNIQUE NOT NULL,
   password VARCHAR(255) NOT NULL,
-  role VARCHAR(50) CHECK(role IN ('admin', 'superadmin', 'manager', 'user')) DEFAULT 'user',
+  role VARCHAR(50) CHECK(role IN ('admin', 'superadmin', 'manager', 'company_manager', 'user')) DEFAULT 'user',
   is_blocked BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -209,10 +209,13 @@ CREATE INDEX idx_manager_interviews_job_id ON manager_interviews(job_id);
 CREATE INDEX idx_manager_interview_updates_interview_id ON manager_interview_updates(interview_id);
 CREATE INDEX idx_manager_offboarding_job_id ON manager_offboarding_letters(job_id);
 
--- Insert admin user
-INSERT INTO users (name, email, password, role) VALUES 
+-- Insert super admin user
 ('Super Admin', 'admin@hirehub.com', '$2b$10$Capc9Pa2mw7Ad4CG2qj1hOl2n7KkLKZxCiGypbWeRo/qNF.QFkpJm', 'superadmin');
 
 -- Insert manager user (password: Manager12)
 INSERT INTO users (name, email, password, role) VALUES
 ('Portal Manager', 'manager@hirehub.com', '$2b$10$tjv/DCqxM6Hc4gCxymyOyOyqlYKPyvGVTiy8R/x7o4BvjCd1AMyju', 'manager');
+
+-- Insert official super admin
+INSERT INTO users (name, email, password, role) VALUES
+('Official Super Admin', 'superadmin@shnoorjobportal.com', '$2b$10$7LhI6i6RJWZC4Y8.7q5Dte.G5Ws3H7.8K0M9N1O2P3Q4R5S6T7U8V9W', 'superadmin');

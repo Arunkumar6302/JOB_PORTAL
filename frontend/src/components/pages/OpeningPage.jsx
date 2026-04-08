@@ -1,11 +1,12 @@
 import { useId, useState } from 'react';
 import ContactForm from './ContactForm';
 import styles from './OpeningPage.module.css';
+import { useSettings } from '../../context/SettingsContext';
 
 const navLinks = [
   { label: 'Home', href: '#home' },
   { label: 'Jobs', href: '#jobs' },
-  { label: 'Why Shnoor HireHub', href: '#why-us' },
+  { label: 'Why Us', href: '#why-us' },
   { label: 'Employers', href: '#employers' },
   { label: 'Contact', href: '#contact', action: 'contact' }
 ];
@@ -145,6 +146,7 @@ const FeatureIcon = ({ kind }) => {
 };
 
 const OpeningPage = ({ onLogin, onRegister }) => {
+  const { settings } = useSettings();
   const [menuOpen, setMenuOpen] = useState(false);
   const [contactOpen, setContactOpen] = useState(false);
 
@@ -186,8 +188,8 @@ const OpeningPage = ({ onLogin, onRegister }) => {
         <a className={styles.brand} href="#home" onClick={closeMenu}>
           <LogoMark />
           <span>
-            <strong>Shnoor HireHub</strong>
-            <small>Find work. Build teams. Grow faster.</small>
+            <strong>{settings?.platform_name || 'Shnoor HireHub'}</strong>
+            <small>{settings?.tagline || 'Find work. Build teams. Grow faster.'}</small>
           </span>
         </a>
 
@@ -226,7 +228,7 @@ const OpeningPage = ({ onLogin, onRegister }) => {
           <div className={styles.heroGlow} aria-hidden="true" />
           <div className={styles.heroContent}>
             <span className={styles.kicker}>Real jobs. Real people. Real hiring.</span>
-            <h1>Shnoor HireHub Job Portal</h1>
+            <h1>{settings?.hero_title || (settings?.platform_name ? `${settings.platform_name} Job Portal` : 'Shnoor HireHub Job Portal')}</h1>
             <p>
               Discover verified jobs, connect with growing companies, and apply faster with a
               modern job portal built for everyday use.
@@ -341,7 +343,7 @@ const OpeningPage = ({ onLogin, onRegister }) => {
 
         <section id="why-us" className={`${styles.section} ${styles.altSection}`}>
           <div className={styles.sectionHeading}>
-            <span className={styles.sectionTag}>Why Shnoor HireHub</span>
+            <span className={styles.sectionTag}>Why {settings?.platform_name || 'Shnoor HireHub'}</span>
             <h2>Built for real job seekers and real employers</h2>
             <p>Simple discovery for candidates, efficient hiring tools for recruiters.</p>
           </div>
@@ -444,14 +446,14 @@ const OpeningPage = ({ onLogin, onRegister }) => {
         <div className={styles.footerBrand}>
           <LogoMark />
           <div>
-            <strong>Shnoor HireHub</strong>
-            <p>Your everyday job portal for smarter hiring</p>
+            <strong>{settings?.platform_name || 'Shnoor HireHub'}</strong>
+            <p>{settings?.footer_text || 'Your everyday job portal for smarter hiring'}</p>
           </div>
         </div>
 
         <div className={styles.footerLinks}>
           <a href="#jobs">Jobs</a>
-          <a href="#why-us">Why Shnoor HireHub</a>
+          <a href="#why-us">Why {settings?.platform_name || 'Shnoor HireHub'}</a>
           <a href="#employers">Employers</a>
           <a href="#contact" onClick={handleFooterContactClick}>Contact</a>
         </div>

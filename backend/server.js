@@ -15,6 +15,7 @@ const logRoutes = require('./routes/logRoutes');
 const managerRoutes = require('./routes/managerRoutes');
 const userPortalRoutes = require('./routes/userPortalRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const settingsRoutes = require('./routes/settingsRoutes');
 
 const User = require('./models/User');
 const { hashPassword } = require('./utils/authUtils');
@@ -47,6 +48,7 @@ app.use('/api/logs', logRoutes);
 app.use('/api/manager', managerRoutes);
 app.use('/api/user-portal', userPortalRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // 404 Handler
 app.use((req, res) => {

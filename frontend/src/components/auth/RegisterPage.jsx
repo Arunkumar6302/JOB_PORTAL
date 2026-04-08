@@ -106,6 +106,7 @@ const RegisterPage = () => {
             <select name="role" value={formData.role} onChange={handleChange}>
               <option value="user">User</option>
               <option value="manager">Manager</option>
+              <option value="company_manager">Company Manager</option>
               <option value="admin">Admin</option>
             </select>
           </div>

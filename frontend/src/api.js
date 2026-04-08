@@ -82,11 +82,16 @@ export const dashboardAPI = {
 };
 
 export const logsAPI = {
-  getAll: () => api.get('/logs')
+  getAll: (filters = {}) => api.get('/logs', { params: filters })
 };
 
 export const contactAPI = {
   sendMessage: (data) => api.post('/contact', data)
+};
+
+export const settingsAPI = {
+  get: () => api.get('/settings'),
+  update: (payload) => api.put('/settings', payload),
 };
 
 export const managerAPI = {

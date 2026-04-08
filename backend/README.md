@@ -149,10 +149,10 @@ When a user logs in:
 ```json
 POST /api/auth/register
 {
-  "name": "Admin User",
-  "email": "admin@example.com",
+  "name": "Company Manager",
+  "email": "company.manager@shnoorjobportal.com",
   "password": "secure_password",
-  "role": "admin"
+  "role": "company_manager"
 }
 ```
 
@@ -160,7 +160,7 @@ POST /api/auth/register
 ```json
 POST /api/auth/login
 {
-  "email": "admin@example.com",
+  "email": "superadmin@shnoorjobportal.com",
   "password": "secure_password"
 }
 ```

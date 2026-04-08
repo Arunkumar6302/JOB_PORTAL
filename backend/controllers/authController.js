@@ -2,19 +2,16 @@ const User = require('../models/User');
 const OTPVerification = require('../models/OTPVerification');
 const { hashPassword, comparePassword, generateToken, generateOTP, sendOTP } = require('../utils/authUtils');
 
-const ALLOWED_ROLES = ['admin', 'superadmin', 'manager', 'user'];
+const ALLOWED_ROLES = ['admin', 'superadmin', 'manager', 'company_manager', 'user'];
 
 // Register
 const register = async (req, res) => {
   try {
     const { name, email, password, role = 'user' } = req.body;
+    const normalizedRole = ALLOWED_ROLES.includes(role) ? role : 'user';
 
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Name, email, and password are required' });
-    }
-
-    if (!ALLOWED_ROLES.includes(role)) {
-      return res.status(400).json({ message: 'Invalid role selected' });
     }
 
     const existingUser = await User.findByEmail(email);
@@ -23,7 +20,7 @@ const register = async (req, res) => {
     }
 
     const hashedPassword = await hashPassword(password);
-    const newUser = await User.create(name, email, hashedPassword, role);
+    const newUser = await User.create(name, email, hashedPassword, normalizedRole);
 
     return res.status(201).json({
       message: 'User registered successfully',

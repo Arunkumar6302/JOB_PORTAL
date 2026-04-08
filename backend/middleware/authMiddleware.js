@@ -27,21 +27,20 @@ const authenticateRoles = (...roles) => (req, res, next) => {
     if (!roles.includes(decoded.role)) {
       return res.status(403).json({ message: 'Access denied.' });
     }
-
     req.user = decoded;
     next();
   } catch (error) {
-    if (error.message === 'NO_TOKEN') {
-      return res.status(401).json({ message: 'No token provided' });
-    }
     res.status(401).json({ message: 'Invalid token', error: error.message });
   }
 };
+
+const authenticateSuperAdmin = authenticateRoles('superadmin');
 
 const authenticateAdmin = authenticateRoles('admin', 'superadmin');
 
 module.exports = {
   authenticate,
   authenticateAdmin,
+  authenticateSuperAdmin,
   authenticateRoles
 };

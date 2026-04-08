@@ -116,7 +116,7 @@ CREATE TABLE otp_verification (
 -- Settings Table
 CREATE TABLE settings (
   id SERIAL PRIMARY KEY,
-  platform_name VARCHAR(255) DEFAULT 'HireHub',
+  platform_name VARCHAR(255) DEFAULT 'Shnoor Job Portal',
   logo_url TEXT,
   company_email VARCHAR(100),
   company_phone VARCHAR(20),
