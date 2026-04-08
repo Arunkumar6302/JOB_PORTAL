@@ -390,10 +390,9 @@
   }
 
   .sidebar.open {
-    width: 250px;
-    position: fixed;
-    z-index: 200;
-    height: 100vh;
+    left: 0;
+    width: 260px;
+    z-index: 1001; /* Higher than toggle */
   }
 
   .sidebar.closed .label,
