@@ -7,49 +7,30 @@ import styles from './AdminLayout.module.css';
 
 const ROLE_LABELS = {
   superadmin: 'Super Admin',
+  admin: 'Admin',
+  manager: 'Manager',
   company_manager: 'Company Manager',
   user: 'User',
 };
 
 const normalizeRole = (role) => {
-  if (role === 'admin') return 'superadmin';
+  if (role === 'admin') return 'admin';
   return role || 'user';
 };
 
-const getRoleLabel = (role) => ROLE_LABELS[normalizeRole(role)] || ROLE_LABELS.user;
+const getRoleLabel = (role) => ROLE_LABELS[role] || ROLE_LABELS.user;
 
 const getInitials = (name) => {
   const parts = String(name || '').trim().split(/\s+/).filter(Boolean);
-
-  if (parts.length === 0) return 'SA';
+  if (parts.length === 0) return 'AD';
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-
   return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-};
-
-const getDisplayRoleByIndex = (index) => {
-  if (index === 0) return 'superadmin';
-  if (index <= 5) return 'company_manager';
-  return 'user';
-};
-
-const getDisplayManagerName = (company, index) => {
-  const ownerName = String(company.owner_name || '').trim();
-  const invalidOwner = !ownerName || /super\s*admin|\badmin\b/i.test(ownerName);
-  return invalidOwner ? `Manager ${index + 1}` : ownerName;
-};
-
-const getDisplayManagerEmail = (company, index) => {
-  const ownerEmail = String(company.owner_email || '').trim().toLowerCase();
-  const invalidEmail = !ownerEmail || ownerEmail.includes('admin@') || ownerEmail.includes('superadmin@');
-  return invalidEmail ? `manager${index + 1}@hirehub.com` : ownerEmail;
 };
 
 const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const renderHighlightedText = (text, searchTerm) => {
   if (!searchTerm) return text;
-
   const query = searchTerm.trim();
   if (!query) return text;
 
@@ -72,23 +53,23 @@ const AdminLayout = ({ children, currentPage, pageTitle }) => {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const [searchLoading, setSearchLoading] = useState(true);
   const profileMenuRef = useRef(null);
-  const isSuperAdmin = normalizeRole(user?.role) === 'superadmin';
+  
   const [searchData, setSearchData] = useState({
     companies: [],
     users: [],
   });
 
   const menuItems = [
-    { name: 'Dashboard', path: '/admin/dashboard', icon: 'DB' },
-    { name: 'My Profile', path: '/admin/profile', icon: 'MP', superAdminOnly: true },
-    { name: 'Companies', path: '/admin/companies', icon: 'CP' },
-    { name: 'Users', path: '/admin/users', icon: 'US' },
-    { name: 'Subscriptions', path: '/admin/subscriptions', icon: 'SB' },
-    { name: 'Logs', path: '/admin/logs', icon: 'LG' },
-    { name: 'Settings', path: '/admin/settings', icon: 'ST' },
+    { name: 'Dashboard', path: '/admin/dashboard', icon: '📊' },
+    { name: 'Openings', path: '/admin/openings', icon: '💼' },
+    { name: 'Applications', path: '/admin/applications', icon: '📝' },
+    { name: 'Companies', path: '/admin/companies', icon: '🏢' },
+    { name: 'Users', path: '/admin/users', icon: '👥' },
+    { name: 'Subscriptions', path: '/admin/subscriptions', icon: '💳' },
+    { name: 'Logs', path: '/admin/logs', icon: '📜' },
+    { name: 'Settings', path: '/admin/settings', icon: '⚙️' },
+    { name: 'My Profile', path: '/admin/profile', icon: '👤' },
   ];
-
-  const visibleMenuItems = menuItems.filter((item) => !item.superAdminOnly || isSuperAdmin);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -96,89 +77,56 @@ const AdminLayout = ({ children, currentPage, pageTitle }) => {
         setProfileMenuOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
     let isMounted = true;
-
     const loadSearchData = async () => {
       try {
+        setSearchLoading(true);
         const [companiesRes, usersRes] = await Promise.all([
-          companyAPI.getAll(),
-          userAPI.getAll(),
+          companyAPI.getAll().catch(() => ({ data: { data: [] } })),
+          userAPI.getAll().catch(() => ({ data: { data: [] } })),
         ]);
-
-        const companyRows = companiesRes.data.data || [];
-        const userRows = usersRes.data.data || [];
-
-        const normalizedCompanies = companyRows.map((company, index) => ({
-          ...company,
-          manager_name: getDisplayManagerName(company, index),
-          manager_email: getDisplayManagerEmail(company, index),
-        }));
-
-        const normalizedUsers = [...userRows]
-          .sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
-          .map((userItem, index) => {
-            const displayRole = getDisplayRoleByIndex(index);
-            return {
-              ...userItem,
-              role: displayRole,
-              role_label: getRoleLabel(displayRole),
-            };
-          });
 
         if (isMounted) {
           setSearchData({
-            companies: normalizedCompanies,
-            users: normalizedUsers,
+            companies: companiesRes.data.data || [],
+            users: usersRes.data.data || [],
           });
         }
       } catch (error) {
-        if (isMounted) {
-          setSearchData({ companies: [], users: [] });
-        }
+        if (isMounted) setSearchData({ companies: [], users: [] });
       } finally {
-        if (isMounted) {
-          setSearchLoading(false);
-        }
+        if (isMounted) setSearchLoading(false);
       }
     };
-
     loadSearchData();
-
-    return () => {
-      isMounted = false;
-    };
+    return () => { isMounted = false; };
   }, []);
 
   const groupedSearchResults = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-
     if (!query) return { companies: [], users: [] };
 
     const matches = (items, fields, mapItem) => items
       .filter((item) => fields.some((field) => String(item[field] || '').toLowerCase().includes(query)))
-      .slice(0, 4)
+      .slice(0, 5)
       .map(mapItem);
 
     return {
-      companies: matches(searchData.companies, ['name', 'manager_name', 'manager_email'], (company) => ({
-        id: company.id,
-        label: company.name,
-        meta: `${company.manager_name} · ${company.manager_email}`,
-        route: `/admin/company/${company.id}`,
+      companies: matches(searchData.companies, ['name', 'email'], (item) => ({
+        id: item.id,
+        label: item.name,
+        meta: item.email || 'Company',
+        route: `/admin/companies`,
       })),
-      users: matches(searchData.users, ['name', 'email', 'role', 'role_label'], (userItem) => ({
-        id: userItem.id,
-        label: userItem.name,
-        meta: `${getRoleLabel(userItem.role)} · ${userItem.email}`,
+      users: matches(searchData.users, ['name', 'email', 'role'], (item) => ({
+        id: item.id,
+        label: item.name,
+        meta: `${getRoleLabel(item.role)} · ${item.email}`,
         route: '/admin/users',
       })),
     };
@@ -199,23 +147,22 @@ const AdminLayout = ({ children, currentPage, pageTitle }) => {
 
   return (
     <div className={styles.container}>
-      {/* Sidebar */}
       <aside className={`${styles.sidebar} ${sidebarOpen ? styles.open : styles.closed}`}>
         <div className={styles.sidebarHeader}>
-          <div>
-            <p className={styles.logo}>{sidebarOpen ? (settings?.platform_name || 'Shnoor HireHub') : (settings?.platform_name?.[0] || 'S')}</p>
+          <div className={styles.logoGroup}>
+            <p className={styles.logo}>{sidebarOpen ? (settings?.platform_name || 'HireHub') : (settings?.platform_name?.[0] || 'H')}</p>
             {sidebarOpen && <p className={styles.logoSub}>Admin Portal</p>}
           </div>
           <button
-            className={`${styles.toggleBtn} ${!sidebarOpen ? styles.closedToggle : ''}`}
+            className={styles.toggleBtn}
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
-            {sidebarOpen ? '<<' : '>>'}
+            {sidebarOpen ? '❮' : '❯'}
           </button>
         </div>
 
         <nav className={styles.nav}>
-          {visibleMenuItems.map((item) => (
+          {menuItems.map((item) => (
             <button
               key={item.path}
               className={`${styles.navItem} ${currentPage === item.path ? styles.active : ''}`}
@@ -228,19 +175,13 @@ const AdminLayout = ({ children, currentPage, pageTitle }) => {
         </nav>
 
         <div className={styles.sidebarFooter}>
-          {sidebarOpen && (
-            <div className={styles.userInfo}>
-              <p className={styles.userName}>{user?.name}</p>
-              <p className={styles.userEmail}>{user?.email}</p>
-            </div>
-          )}
           <button className={styles.logoutBtn} onClick={handleLogout}>
-            {sidebarOpen ? '🚪 Logout' : '🚪'}
+            <span className={styles.icon}>🚪</span>
+            {sidebarOpen && <span className={styles.label}>Logout</span>}
           </button>
         </div>
       </aside>
 
-      {/* Main Content */}
       <main className={styles.main}>
         <header className={styles.header}>
           <div className={styles.headerLeft}>
@@ -250,94 +191,79 @@ const AdminLayout = ({ children, currentPage, pageTitle }) => {
             >
               ☰
             </button>
-            <h2>{pageTitle || currentPage.split('/').pop().toUpperCase()}</h2>
+            <h2>{pageTitle || currentPage.split('/').pop().toUpperCase() || 'DASHBOARD'}</h2>
           </div>
+
           <div className={styles.headerRight}>
             <div className={styles.searchWrap}>
-              <div className={styles.searchInputWrap}>
-                <input
-                  id="global-search"
-                  className={styles.searchInput}
-                  type="text"
-                  placeholder="Search companies or users"
-                  value={searchTerm}
-                  onChange={(event) => {
-                    setSearchTerm(event.target.value);
-                    setSearchOpen(true);
-                  }}
-                  onFocus={() => setSearchOpen(true)}
-                />
-              </div>
+              <input
+                className={styles.searchInput}
+                type="text"
+                placeholder="Search..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setSearchOpen(true);
+                }}
+                onFocus={() => setSearchOpen(true)}
+              />
 
               {searchOpen && searchTerm.trim() && (
                 <div className={styles.searchResults}>
                   {searchLoading ? (
-                    <div className={styles.searchEmpty}>Loading search data...</div>
+                    <div className={styles.searchEmpty}>Loading...</div>
                   ) : hasSearchResults ? (
                     <>
                       {groupedSearchResults.companies.length > 0 && (
                         <div className={styles.searchGroup}>
                           <h4>Companies</h4>
                           {groupedSearchResults.companies.map((item) => (
-                            <button key={`company-${item.id}`} type="button" className={styles.searchResult} onClick={() => handleSearchSelect(item.route)}>
+                            <button key={`c-${item.id}`} className={styles.searchResult} onClick={() => handleSearchSelect(item.route)}>
                               <span className={styles.searchResultTitle}>{renderHighlightedText(item.label, searchTerm)}</span>
-                              <span className={styles.searchResultMeta}>{renderHighlightedText(item.meta, searchTerm)}</span>
+                              <span className={styles.searchResultMeta}>{item.meta}</span>
                             </button>
                           ))}
                         </div>
                       )}
-
                       {groupedSearchResults.users.length > 0 && (
                         <div className={styles.searchGroup}>
                           <h4>Users</h4>
                           {groupedSearchResults.users.map((item) => (
-                            <button key={`user-${item.id}`} type="button" className={styles.searchResult} onClick={() => handleSearchSelect(item.route)}>
+                            <button key={`u-${item.id}`} className={styles.searchResult} onClick={() => handleSearchSelect(item.route)}>
                               <span className={styles.searchResultTitle}>{renderHighlightedText(item.label, searchTerm)}</span>
-                              <span className={styles.searchResultMeta}>{renderHighlightedText(item.meta, searchTerm)}</span>
+                              <span className={styles.searchResultMeta}>{item.meta}</span>
                             </button>
                           ))}
                         </div>
                       )}
-
                     </>
                   ) : (
-                    <div className={styles.searchEmpty}>No matches found.</div>
+                    <div className={styles.searchEmpty}>No results</div>
                   )}
                 </div>
               )}
             </div>
 
-            {isSuperAdmin && (
-              <div className={styles.profileMenuWrap} ref={profileMenuRef}>
-                <button
-                  type="button"
-                  className={styles.profileAvatarBtn}
-                  onClick={() => setProfileMenuOpen((open) => !open)}
-                  aria-haspopup="menu"
-                  aria-expanded={profileMenuOpen}
-                >
-                  <span className={styles.profileAvatar}>{getInitials(user?.name || 'Sameer Sohail')}</span>
-                </button>
+            <div className={styles.profileMenuWrap} ref={profileMenuRef}>
+              <button
+                className={styles.profileAvatarBtn}
+                onClick={() => setProfileMenuOpen(!profileMenuOpen)}
+              >
+                <div className={styles.profileAvatar}>{getInitials(user?.name)}</div>
+              </button>
 
-                {profileMenuOpen && (
-                  <div className={styles.profileMenu} role="menu" aria-label="Profile menu">
-                    <button
-                      type="button"
-                      className={styles.profileMenuItem}
-                      onClick={() => {
-                        setProfileMenuOpen(false);
-                        navigate('/admin/profile');
-                      }}
-                    >
-                      My Profile
-                    </button>
-                    <button type="button" className={styles.profileMenuItem} onClick={handleLogout}>
-                      Logout
-                    </button>
+              {profileMenuOpen && (
+                <div className={styles.profileMenu}>
+                  <div className={styles.profileMenuHeader}>
+                    <p>{user?.name}</p>
+                    <small>{user?.email}</small>
                   </div>
-                )}
-              </div>
-            )}
+                  <hr />
+                  <button onClick={() => { setProfileMenuOpen(false); navigate('/admin/profile'); }}>My Profile</button>
+                  <button onClick={handleLogout} className={styles.logoutMenuBtn}>Logout</button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

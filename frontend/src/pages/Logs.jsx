@@ -8,19 +8,25 @@ const Logs = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [entityFilter, setEntityFilter] = useState('all');
+  const [selectedLog, setSelectedLog] = useState(null);
 
   useEffect(() => {
     fetchLogs();
+    const intervalId = setInterval(() => {
+      fetchLogs({ silent: true });
+    }, 15000);
+    return () => clearInterval(intervalId);
   }, [entityFilter]);
 
-  const fetchLogs = async () => {
+  const fetchLogs = async ({ silent = false } = {}) => {
     try {
+      if (!silent) setLoading(true);
       const response = await logsAPI.getAll({ entityFilter });
       setLogs(response.data.data);
     } catch (err) {
-      setError('Failed to load activity logs');
+      if (!silent) setError('Failed to load activity logs');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -41,9 +47,7 @@ const Logs = () => {
   if (loading) {
     return (
       <AdminLayout currentPage="/admin/logs" pageTitle="Activity Logs">
-        <div className={styles.loading}>
-          <div className={styles.spinner}></div>
-        </div>
+        <div className={styles.loading}><div className={styles.spinner}></div></div>
       </AdminLayout>
     );
   }
@@ -56,32 +60,32 @@ const Logs = () => {
         <div className={styles.tableHeader}>
           <h3>Activity Logs</h3>
           <div className={styles.filterWrap}>
-            <select id="entityFilter" value={entityFilter} onChange={(event) => setEntityFilter(event.target.value)}>
-              <option value="all">All</option>
+            <select value={entityFilter} onChange={(e) => setEntityFilter(e.target.value)}>
+              <option value="all">All Entities</option>
               <option value="user">Users</option>
               <option value="company">Companies</option>
               <option value="company_manager">Company Managers</option>
+              <option value="application">Applications</option>
+              <option value="job">Jobs</option>
+              <option value="interview">Interviews</option>
             </select>
           </div>
         </div>
         <table className={styles.table}>
           <thead>
-            <tr>
-              <th>Action</th>
-              <th>Entity Type</th>
-              <th>Entity ID</th>
-              <th>Timestamp</th>
-            </tr>
+            <tr><th>Action</th><th>Entity Type</th><th>Entity ID</th><th>Timestamp</th></tr>
           </thead>
           <tbody>
             {logs.length === 0 ? (
-              <tr>
-                <td colSpan="4" className={styles.empty}>No logs found</td>
-              </tr>
+              <tr><td colSpan="4" className={styles.empty}>No logs found</td></tr>
             ) : (
               logs.map((log) => (
                 <tr key={log.id}>
-                  <td><span className={`${styles.badge} ${getActionBadge(log.action)}`}>{log.action}</span></td>
+                  <td>
+                    <button type="button" className={styles.actionLink} onClick={() => setSelectedLog(log)}>
+                      <span className={`${styles.badge} ${getActionBadge(log.action)}`}>{log.action}</span>
+                    </button>
+                  </td>
                   <td>{log.entity_type}</td>
                   <td>{log.entity_id}</td>
                   <td>{formatDate(log.created_at)}</td>
@@ -91,6 +95,22 @@ const Logs = () => {
           </tbody>
         </table>
       </div>
+
+      {selectedLog && (
+        <div className={styles.modalBackdrop} onClick={() => setSelectedLog(null)}>
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h3>Log Details</h3>
+            <p><strong>Action:</strong> {selectedLog.action}</p>
+            <p><strong>Entity:</strong> {selectedLog.entity_type} #{selectedLog.entity_id}</p>
+            <p><strong>Timestamp:</strong> {formatDate(selectedLog.created_at)}</p>
+            <div className={styles.metaContainer}>
+              <strong>Metadata:</strong>
+              <pre className={styles.metaBox}>{JSON.stringify(selectedLog.metadata || {}, null, 2)}</pre>
+            </div>
+            <button type="button" className={styles.closeBtn} onClick={() => setSelectedLog(null)}>Close</button>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 };

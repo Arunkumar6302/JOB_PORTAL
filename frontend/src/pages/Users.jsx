@@ -5,23 +5,18 @@ import styles from './Users.module.css';
 
 const ROLE_LABELS = {
   superadmin: 'Super Admin',
+  admin: 'Admin',
+  manager: 'Manager',
   company_manager: 'Company Manager',
   user: 'User',
 };
 
-const normalizeRole = (role) => (role === 'admin' ? 'superadmin' : role || 'user');
-
-const getDisplayRoleByIndex = (index) => {
-  if (index === 0) return 'superadmin';
-  if (index <= 5) return 'company_manager';
-  return 'user';
-};
+const normalizeRole = (role) => role || 'user';
 
 const getRoleClass = (role) => {
-  const normalizedRole = normalizeRole(role);
-
-  if (normalizedRole === 'superadmin') return styles.roleSuperAdmin;
-  if (normalizedRole === 'company_manager') return styles.roleCompanyManager;
+  const normalized = normalizeRole(role);
+  if (normalized === 'superadmin' || normalized === 'admin') return styles.roleSuperAdmin;
+  if (normalized === 'company_manager' || normalized === 'manager') return styles.roleCompanyManager;
   return styles.roleUser;
 };
 
@@ -38,28 +33,24 @@ const Users = () => {
 
   useEffect(() => {
     fetchUsers();
+    const intervalId = setInterval(() => {
+      fetchUsers({ silent: true });
+    }, 15000);
+    return () => clearInterval(intervalId);
   }, []);
 
-  const formatDate = (dateString) => {
-    if (!dateString) return 'N/A';
-    return new Date(dateString).toLocaleDateString();
-  };
-
-  const fetchUsers = async () => {
+  const fetchUsers = async ({ silent = false } = {}) => {
     try {
+      if (!silent) setLoading(true);
       const res = await userAPI.getAll();
-      const normalizedUsers = [...(res.data.data || [])]
-        .sort((a, b) => Number(a.id || 0) - Number(b.id || 0))
-        .map((userItem, index) => ({
-          ...userItem,
-          role: getDisplayRoleByIndex(index),
-        }));
-
-      setUsers(normalizedUsers);
+      const rows = res.data.data || [];
+      // Filter out only if needed, but usually admin sees all. 
+      // irfanhub version filtered out admins. I'll keep them but show them.
+      setUsers(rows);
     } catch (err) {
-      setError('Failed to load users');
+      if (!silent) setError('Failed to load users');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -87,14 +78,27 @@ const Users = () => {
     }
   };
 
+  const handleDelete = async (userId) => {
+    if (!window.confirm('Are you sure you want to delete this user?')) return;
+    setActionLoading(userId);
+    try {
+      await userAPI.delete(userId);
+      setUsers(users.filter(u => u.id !== userId));
+    } catch (err) {
+      setError('Failed to delete user');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
   const filteredUsers = useMemo(() => {
-    return users.filter((user) => {
-      const matchesSearch = [user.name, user.email, getRoleLabel(user.role)]
+    return users.filter((u) => {
+      const matchesSearch = [u.name, u.email, getRoleLabel(u.role)]
         .filter(Boolean)
-        .some((value) => value.toLowerCase().includes(searchTerm.toLowerCase()));
-      const matchesRole = roleFilter === 'all' || user.role === roleFilter;
-      const userStatus = user.is_blocked ? 'blocked' : 'active';
-      const matchesStatus = statusFilter === 'all' || userStatus === statusFilter;
+        .some((val) => val.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+      const status = u.is_blocked ? 'blocked' : 'active';
+      const matchesStatus = statusFilter === 'all' || status === statusFilter;
       return matchesSearch && matchesRole && matchesStatus;
     });
   }, [users, searchTerm, roleFilter, statusFilter]);
@@ -104,53 +108,42 @@ const Users = () => {
   if (loading) {
     return (
       <AdminLayout currentPage="/admin/users">
-        <div className={styles.loading}>
-          <div className={styles.spinner}></div>
-        </div>
+        <div className={styles.loading}><div className={styles.spinner}></div></div>
       </AdminLayout>
     );
   }
 
   return (
-    <AdminLayout currentPage="/admin/users">
+    <AdminLayout currentPage="/admin/users" pageTitle="User Management">
       {error && <div className={styles.alert}>{error}</div>}
 
       <div className={styles.filtersBar}>
         <div className={styles.filterGroup}>
-          <label htmlFor="user-search">Search</label>
+          <label>Search</label>
           <input
-            id="user-search"
             type="text"
             className={styles.searchInput}
-            placeholder="Search by name or email"
+            placeholder="Search users..."
             value={searchTerm}
-            onChange={(event) => setSearchTerm(event.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
 
         <div className={styles.filterGroup}>
-          <label htmlFor="user-role">Role</label>
-          <select
-            id="user-role"
-            className={styles.select}
-            value={roleFilter}
-            onChange={(event) => setRoleFilter(event.target.value)}
-          >
+          <label>Role</label>
+          <select className={styles.select} value={roleFilter} onChange={(e) => setRoleFilter(e.target.value)}>
             <option value="all">All Roles</option>
             <option value="superadmin">Super Admin</option>
+            <option value="admin">Admin</option>
+            <option value="manager">Manager</option>
             <option value="company_manager">Company Manager</option>
             <option value="user">User</option>
           </select>
         </div>
 
         <div className={styles.filterGroup}>
-          <label htmlFor="user-status">Status</label>
-          <select
-            id="user-status"
-            className={styles.select}
-            value={statusFilter}
-            onChange={(event) => setStatusFilter(event.target.value)}
-          >
+          <label>Status</label>
+          <select className={styles.select} value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
             <option value="all">All Status</option>
             <option value="active">Active</option>
             <option value="blocked">Blocked</option>
@@ -159,55 +152,34 @@ const Users = () => {
       </div>
 
       <div className={styles.tableContainer}>
-        <h3>User Management</h3>
         <table className={styles.table}>
           <thead>
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Role</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
+            <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody>
             {filteredUsers.length === 0 ? (
-              <tr>
-                <td colSpan="5" className={styles.empty}>No users found</td>
-              </tr>
+              <tr><td colSpan="5" className={styles.empty}>No users found</td></tr>
             ) : (
-              filteredUsers.map(user => (
-                <tr key={user.id}>
-                  <td>{user.name}</td>
-                  <td>{user.email}</td>
-                  <td>
-                    <span className={`${styles.role} ${getRoleClass(user.role)}`}>
-                      {getRoleLabel(user.role)}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`${styles.badge} ${getStatusBadge(user.is_blocked)}`}>
-                      {user.is_blocked ? 'Blocked' : 'Active'}
-                    </span>
-                  </td>
-                  <td>
-                    {user.is_blocked ? (
-                      <button
-                        className={styles.btnSuccess}
-                        onClick={() => handleUnblock(user.id)}
-                        disabled={actionLoading === user.id}
-                      >
-                        ✓ Unblock
-                      </button>
+              filteredUsers.map(u => (
+                <tr key={u.id}>
+                  <td>{u.name}</td>
+                  <td>{u.email}</td>
+                  <td><span className={`${styles.role} ${getRoleClass(u.role)}`}>{getRoleLabel(u.role)}</span></td>
+                  <td><span className={`${styles.badge} ${getStatusBadge(u.is_blocked)}`}>{u.is_blocked ? 'Blocked' : 'Active'}</span></td>
+                  <td className={styles.actions}>
+                    {u.is_blocked ? (
+                      <button className={styles.btnSuccess} onClick={() => handleUnblock(u.id)} disabled={actionLoading === u.id}>Unblock</button>
                     ) : (
-                      <button
-                        className={styles.btnDanger}
-                        onClick={() => handleBlock(user.id)}
-                        disabled={actionLoading === user.id}
-                      >
-                        🚫 Block
-                      </button>
+                      <button className={styles.btnDanger} onClick={() => handleBlock(u.id)} disabled={actionLoading === u.id}>Block</button>
                     )}
+                    <button
+                      className={styles.btnDanger}
+                      onClick={() => handleDelete(u.id)}
+                      disabled={actionLoading === u.id}
+                      style={{ marginLeft: '8px' }}
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))

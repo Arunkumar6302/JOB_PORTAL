@@ -8,15 +8,14 @@ import OpeningPage from './components/pages/OpeningPage';
 import LoginPage from './components/auth/LoginPage';
 import RegisterPage from './components/auth/RegisterPage';
 import OTPVerificationPage from './components/auth/OTPVerificationPage';
-import Dashboard from './pages/Dashboard';
 import Companies from './pages/Companies';
 import Users from './pages/Users';
 import Subscriptions from './pages/Subscriptions';
 import Logs from './pages/Logs';
-import CompanyDetails from './pages/CompanyDetails';
 import Settings from './pages/Settings';
 import Jobs from './pages/Jobs';
 import Applications from './pages/Applications';
+import Profile from './pages/Profile';
 import ManagerDashboard from './pages/ManagerDashboard';
 import UserHome from './pages/user/UserHome';
 import UserJobProfiles from './pages/user/UserJobProfiles';
@@ -27,7 +26,6 @@ import UserEvents from './pages/user/UserEvents';
 import UserCompetitions from './pages/user/UserCompetitions';
 import UserResume from './pages/user/UserResume';
 import UserHelp from './pages/user/UserHelp';
-import Profile from './pages/Profile';
 
 const normalizeRole = (role) => {
   if (role === 'admin') return 'superadmin';
@@ -39,7 +37,7 @@ const getDefaultDashboardPath = (role) => {
     return '/admin/dashboard';
   }
 
-  if (role === 'manager') {
+  if (['manager', 'company_manager'].includes(role)) {
     return '/manager/dashboard';
   }
 
@@ -131,19 +129,27 @@ const AppContent = () => {
 
       {/* Admin Routes */}
       <Route
+        path="/admin/profile"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/admin/openings"
+        element={
+          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
+            <Jobs />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/admin/dashboard"
         element={
           <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
             <Dashboard />
           </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/profile"
-        element={
-          <SuperAdminRoute>
-            <Profile />
-          </SuperAdminRoute>
         }
       />
       <Route
@@ -155,10 +161,10 @@ const AppContent = () => {
         }
       />
       <Route
-        path="/admin/company/:id"
+        path="/admin/applications"
         element={
           <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
-            <CompanyDetails />
+            <Applications />
           </ProtectedRoute>
         }
       />
@@ -167,22 +173,6 @@ const AppContent = () => {
         element={
           <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
             <Users />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/jobs"
-        element={
-          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
-            <Jobs />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/applications"
-        element={
-          <ProtectedRoute allowedRoles={['admin', 'superadmin']}>
-            <Applications />
           </ProtectedRoute>
         }
       />
@@ -215,7 +205,7 @@ const AppContent = () => {
       <Route
         path="/manager/dashboard"
         element={
-          <ProtectedRoute allowedRoles={['manager', 'admin', 'superadmin']}>
+          <ProtectedRoute allowedRoles={['manager', 'company_manager', 'admin', 'superadmin']}>
             <ManagerDashboard />
           </ProtectedRoute>
         }

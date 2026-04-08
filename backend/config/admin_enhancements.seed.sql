@@ -19,9 +19,9 @@ VALUES
   (7, 'Liam Davis', 'liam.davis@hirehub.com', '$2a$10$u5fy9pSfSrmpywXZoWBohuReJJU65k68pjo0NdQdioVUxx0oHlJXy', 'user', TRUE, '2025-12-15 08:00:00', '2025-12-15 08:00:00'),
   (8, 'Olivia Martinez', 'olivia.martinez@hirehub.com', '$2a$10$u5fy9pSfSrmpywXZoWBohuReJJU65k68pjo0NdQdioVUxx0oHlJXy', 'user', FALSE, '2026-01-08 08:00:00', '2026-01-08 08:00:00'),
   (9, 'James Taylor', 'james.taylor@hirehub.com', '$2a$10$u5fy9pSfSrmpywXZoWBohuReJJU65k68pjo0NdQdioVUxx0oHlJXy', 'user', FALSE, '2026-01-22 08:00:00', '2026-01-22 08:00:00'),
-  (10, 'Isabella Moore', 'isabella.moore@hirehub.com', '$2a$10$u5fy9pSfSrmpywXZoWBohuReJJU65k68pjo0NdQdioVUxx0oHlJXy', 'user', FALSE, '2026-02-04 08:00:00', '2026-02-04 08:00:00'),
+  (10, 'Isabella Moore', 'isabella. Moore@hirehub.com', '$2a$10$u5fy9pSfSrmpywXZoWBohuReJJU65k68pjo0NdQdioVUxx0oHlJXy', 'user', FALSE, '2026-02-04 08:00:00', '2026-02-04 08:00:00'),
   (11, 'Benjamin Clark', 'benjamin.clark@hirehub.com', '$2a$10$u5fy9pSfSrmpywXZoWBohuReJJU65k68pjo0NdQdioVUxx0oHlJXy', 'user', TRUE, '2026-02-19 08:00:00', '2026-02-19 08:00:00'),
-  (12, 'Charlotte Lewis', 'charlotte.lewis@hirehub.com', '$2a$10$u5fy9pSfSrmpywXZoWBohuReJJU65k68pjo0NdQdioVUxx0oHlJXy', 'user', FALSE, '2026-03-05 08:00:00', '2026-03-05 08:00:00'),
+  (12, 'Charlotte Lewis', 'charlotte.lewis@hirehub.com', '$2a$10$u5fy9pSfSrmpywXZoWBohuReJJU65k68pjo0NdQdioVUxx0oHlJXy', 'user', FALSE, '2026-03-05 08:00:00', '2026-03-05 08:00:00',
   (13, 'Portal Manager', 'manager@hirehub.com', '$2b$10$tjv/DCqxM6Hc4gCxymyOyOyqlYKPyvGVTiy8R/x7o4BvjCd1AMyju', 'manager', FALSE, '2026-03-12 08:00:00', '2026-03-12 08:00:00')
 ON CONFLICT (id) DO NOTHING;
 

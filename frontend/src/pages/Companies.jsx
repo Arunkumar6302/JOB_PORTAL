@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { companyAPI } from '../api';
+import { companyAPI, userAPI } from '../api';
 import AdminLayout from '../components/admin/AdminLayout';
 import styles from './Companies.module.css';
 
@@ -19,14 +19,24 @@ const getDisplayManagerEmail = (company, index) => {
 const Companies = () => {
   const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [actionLoading, setActionLoading] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [savingCompany, setSavingCompany] = useState(false);
+  const [companyForm, setCompanyForm] = useState({
+    name: '',
+    owner_id: '',
+    email: '',
+    phone: '',
+    website: '',
+    description: '',
+  });
 
   useEffect(() => {
-    fetchCompanies();
+    fetchData();
   }, []);
 
   const formatDate = (dateString) => {
@@ -34,19 +44,61 @@ const Companies = () => {
     return new Date(dateString).toLocaleDateString();
   };
 
-  const fetchCompanies = async () => {
+  const fetchData = async () => {
     try {
-      const res = await companyAPI.getAll();
-      const normalized = (res.data.data || []).map((company, index) => ({
+      const [companiesRes, usersRes] = await Promise.all([
+        companyAPI.getAll(),
+        userAPI.getAll()
+      ]);
+      const companyRows = companiesRes.data.data || [];
+      const userRows = usersRes.data.data || [];
+
+      setCompanies(companyRows.map((company, index) => ({
         ...company,
-        display_manager_name: getDisplayManagerName(company, index),
-        display_manager_email: getDisplayManagerEmail(company, index),
-      }));
-      setCompanies(normalized);
+        display_manager_name: company.owner_name || getDisplayManagerName(company, index),
+        display_manager_email: company.owner_email || getDisplayManagerEmail(company, index),
+      })));
+      setUsers(userRows.filter((user) => ['manager', 'company_manager', 'user'].includes(user.role)));
     } catch (err) {
       setError('Failed to load companies');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFormChange = (event) => {
+    const { name, value } = event.target;
+    setCompanyForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleCreateCompany = async (event) => {
+    event.preventDefault();
+    setSavingCompany(true);
+    setError('');
+
+    try {
+      const response = await companyAPI.create(companyForm);
+      const createdCompany = response.data.data;
+      setCompanies((prev) => [
+        {
+          ...createdCompany,
+          display_manager_name: users.find((user) => Number(user.id) === Number(createdCompany.owner_id))?.name || 'N/A',
+          display_manager_email: users.find((user) => Number(user.id) === Number(createdCompany.owner_id))?.email || 'N/A',
+        },
+        ...prev,
+      ]);
+      setCompanyForm({
+        name: '',
+        owner_id: '',
+        email: '',
+        phone: '',
+        website: '',
+        description: '',
+      });
+    } catch (err) {
+      setError(err?.response?.data?.message || 'Failed to create company');
+    } finally {
+      setSavingCompany(false);
     }
   };
 
@@ -132,6 +184,26 @@ const Companies = () => {
     <AdminLayout currentPage="/admin/companies">
       {error && <div className={styles.alert}>{error}</div>}
 
+      <div className={styles.createCard}>
+        <h3>Add Company</h3>
+        <form className={styles.createForm} onSubmit={handleCreateCompany}>
+          <input name="name" value={companyForm.name} onChange={handleFormChange} placeholder="Company name" required />
+          <select name="owner_id" value={companyForm.owner_id} onChange={handleFormChange} required>
+            <option value="">Select owner / manager</option>
+            {users.map((user) => (
+              <option key={user.id} value={user.id}>{user.name} - {getRoleLabel(user.role)}</option>
+            ))}
+          </select>
+          <input name="email" value={companyForm.email} onChange={handleFormChange} placeholder="Company email" required />
+          <input name="phone" value={companyForm.phone} onChange={handleFormChange} placeholder="Phone" />
+          <input name="website" value={companyForm.website} onChange={handleFormChange} placeholder="Website" />
+          <textarea name="description" value={companyForm.description} onChange={handleFormChange} placeholder="Description" rows="4" />
+          <button className={styles.createBtn} type="submit" disabled={savingCompany}>
+            {savingCompany ? 'Creating...' : 'Create Company'}
+          </button>
+        </form>
+      </div>
+
       <div className={styles.filtersBar}>
         <div className={styles.filterGroup}>
           <label htmlFor="company-search">Search</label>
@@ -139,7 +211,7 @@ const Companies = () => {
             id="company-search"
             type="text"
             className={styles.searchInput}
-            placeholder="Search by company or owner name"
+            placeholder="Search by company, manager, or email"
             value={searchTerm}
             onChange={(event) => setSearchTerm(event.target.value)}
           />
@@ -244,6 +316,11 @@ const Companies = () => {
       </div>
     </AdminLayout>
   );
+};
+
+const getRoleLabel = (role) => {
+  const labels = { manager: 'Manager', company_manager: 'Company Manager', user: 'User' };
+  return labels[role] || 'User';
 };
 
 export default Companies;

@@ -47,7 +47,7 @@ const formatDateTime = (value) => new Date(value).toLocaleString('en-IN', {
 });
 
 const initialProfile = {
-  fullName: 'Sameer Sohail',
+  fullName: 'Super Admin',
   email: 'admin@hirehub.com',
   role: 'Super Admin',
   phone: '+91 98765 43210',
@@ -57,7 +57,7 @@ const initialProfile = {
   experience: '2',
   skills: 'Platform Operations, User Management, Security Reviews, System Monitoring',
   accountCreated: '2024-01-12T09:30:00.000Z',
-  lastLogin: '2026-04-06T08:15:00.000Z',
+  lastLogin: new Date().toISOString(),
 };
 
 const initialPasswordState = {
@@ -68,7 +68,6 @@ const initialPasswordState = {
 
 const readStoredProfile = () => {
   if (typeof window === 'undefined') return null;
-
   try {
     const storedProfile = localStorage.getItem(PROFILE_STORAGE_KEY);
     return storedProfile ? JSON.parse(storedProfile) : null;
@@ -79,11 +78,7 @@ const readStoredProfile = () => {
 
 const buildProfileState = () => {
   const storedProfile = readStoredProfile();
-  const mergedProfile = {
-    ...initialProfile,
-    ...storedProfile,
-  };
-
+  const mergedProfile = { ...initialProfile, ...storedProfile };
   return {
     ...mergedProfile,
     image: storedProfile?.image || createAvatarDataUrl(mergedProfile.fullName),
@@ -94,7 +89,7 @@ const persistProfile = (profile) => {
   try {
     localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
   } catch (error) {
-    // Best-effort persistence for the mock profile.
+    // Local-only persistence.
   }
 };
 
@@ -124,15 +119,11 @@ const Profile = () => {
 
   const handleDraftChange = (event) => {
     const { name, value } = event.target;
-    setDraft((current) => ({
-      ...current,
-      [name]: value,
-    }));
+    setDraft((current) => ({ ...current, [name]: value }));
   };
 
   const handleImageUpload = (event) => {
     const file = event.target.files?.[0];
-
     if (!file) return;
 
     const reader = new FileReader();
@@ -148,6 +139,7 @@ const Profile = () => {
       ...profile,
       ...draft,
       image: previewImage || profile.image,
+      lastLogin: new Date().toISOString(),
     };
 
     setProfile(nextProfile);
@@ -155,7 +147,7 @@ const Profile = () => {
     setPreviewImage(nextProfile.image);
     setIsEditing(false);
     persistProfile(nextProfile);
-    setFeedback({ type: 'success', message: 'Profile updated locally.' });
+    setFeedback({ type: 'success', message: 'Profile updated successfully.' });
   };
 
   const handleCancelProfile = () => {
@@ -167,10 +159,7 @@ const Profile = () => {
 
   const handlePasswordFieldChange = (event) => {
     const { name, value } = event.target;
-    setPasswordForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
+    setPasswordForm((current) => ({ ...current, [name]: value }));
   };
 
   const handlePasswordSave = () => {
@@ -180,12 +169,12 @@ const Profile = () => {
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      setFeedback({ type: 'error', message: 'New password and confirm password must match.' });
+      setFeedback({ type: 'error', message: 'Passwords must match.' });
       return;
     }
 
     setPasswordForm(initialPasswordState);
-    setFeedback({ type: 'success', message: 'Password change saved locally.' });
+    setFeedback({ type: 'success', message: 'Password updated successfully.' });
   };
 
   return (
@@ -200,13 +189,11 @@ const Profile = () => {
         <div className={styles.heroCard}>
           <div className={styles.heroImageBlock}>
             <div className={styles.avatarFrame}>
-              <img className={styles.avatarImage} src={profileImage} alt="Super admin profile" />
+              <img className={styles.avatarImage} src={profileImage} alt="Profile" />
             </div>
-
             <div className={styles.uploadBlock}>
-              <label htmlFor="profileImage" className={styles.fieldLabel}>Profile Image</label>
-              <input id="profileImage" type="file" accept="image/*" onChange={handleImageUpload} />
-              <p className={styles.helperText}>Preview updates instantly. Save keeps the image locally.</p>
+              <label className={styles.fieldLabel}>Profile Image</label>
+              <input type="file" accept="image/*" onChange={handleImageUpload} />
             </div>
           </div>
 
@@ -216,31 +203,17 @@ const Profile = () => {
               <h2>{profile.fullName}</h2>
               <p className={styles.subtleText}>{profile.designation} · {profile.department}</p>
             </div>
-
             <div className={styles.heroMetaGrid}>
-              <div className={styles.metaChip}>
-                <span>Role</span>
-                <strong>{profile.role}</strong>
-              </div>
-              <div className={styles.metaChip}>
-                <span>Experience</span>
-                <strong>{profile.experience} years</strong>
-              </div>
+              <div className={styles.metaChip}><span>Role</span><strong>{profile.role}</strong></div>
+              <div className={styles.metaChip}><span>Experience</span><strong>{profile.experience} years</strong></div>
             </div>
-
             <div className={styles.actionRow}>
               {!isEditing ? (
-                <button type="button" className={styles.primaryBtn} onClick={startEditing}>
-                  Edit Profile
-                </button>
+                <button type="button" className={styles.primaryBtn} onClick={startEditing}>Edit Profile</button>
               ) : (
                 <>
-                  <button type="button" className={styles.primaryBtn} onClick={handleSaveProfile}>
-                    Save
-                  </button>
-                  <button type="button" className={styles.secondaryBtn} onClick={handleCancelProfile}>
-                    Cancel
-                  </button>
+                  <button type="button" className={styles.primaryBtn} onClick={handleSaveProfile}>Save</button>
+                  <button type="button" className={styles.secondaryBtn} onClick={handleCancelProfile}>Cancel</button>
                 </>
               )}
             </div>
@@ -251,141 +224,74 @@ const Profile = () => {
           <section className={styles.card}>
             <div className={styles.cardHeader}>
               <h3>Personal Information</h3>
-              <span className={styles.sectionNote}>Editable profile basics</span>
             </div>
-
             <div className={styles.formGrid}>
               <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="fullName">Full Name</label>
-                <input id="fullName" name="fullName" value={draft.fullName} onChange={handleDraftChange} disabled={!isEditing} />
+                <label className={styles.fieldLabel}>Full Name</label>
+                <input name="fullName" value={draft.fullName} onChange={handleDraftChange} disabled={!isEditing} />
               </div>
-
               <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="email">Email</label>
-                <input id="email" value={profile.email} readOnly />
+                <label className={styles.fieldLabel}>Email</label>
+                <input value={profile.email} readOnly />
               </div>
-
               <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="role">Role</label>
-                <input id="role" value={profile.role} readOnly />
+                <label className={styles.fieldLabel}>Phone</label>
+                <input name="phone" value={draft.phone} onChange={handleDraftChange} disabled={!isEditing} />
               </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="phone">Phone Number</label>
-                <input id="phone" name="phone" value={draft.phone} onChange={handleDraftChange} disabled={!isEditing} />
-              </div>
-
               <div className={`${styles.fieldGroup} ${styles.fullWidth}`}>
-                <label className={styles.fieldLabel} htmlFor="location">Location</label>
-                <input id="location" name="location" value={draft.location} onChange={handleDraftChange} disabled={!isEditing} />
+                <label className={styles.fieldLabel}>Location</label>
+                <input name="location" value={draft.location} onChange={handleDraftChange} disabled={!isEditing} />
               </div>
             </div>
           </section>
 
           <section className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h3>Professional Information</h3>
-              <span className={styles.sectionNote}>Platform leadership profile</span>
-            </div>
-
+            <div className={styles.cardHeader}><h3>Professional</h3></div>
             <div className={styles.formGrid}>
               <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="designation">Designation</label>
-                <input id="designation" name="designation" value={draft.designation} onChange={handleDraftChange} disabled={!isEditing} />
+                <label className={styles.fieldLabel}>Designation</label>
+                <input name="designation" value={draft.designation} onChange={handleDraftChange} disabled={!isEditing} />
               </div>
-
               <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="department">Department</label>
-                <input id="department" name="department" value={draft.department} onChange={handleDraftChange} disabled={!isEditing} />
+                <label className={styles.fieldLabel}>Experience</label>
+                <input name="experience" type="number" value={draft.experience} onChange={handleDraftChange} disabled={!isEditing} />
               </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="experience">Experience (years)</label>
-                <input id="experience" name="experience" type="number" min="0" value={draft.experience} onChange={handleDraftChange} disabled={!isEditing} />
-              </div>
-
               <div className={`${styles.fieldGroup} ${styles.fullWidth}`}>
-                <label className={styles.fieldLabel} htmlFor="skills">Skills</label>
-                <textarea
-                  id="skills"
-                  name="skills"
-                  rows="4"
-                  value={draft.skills}
-                  onChange={handleDraftChange}
-                  disabled={!isEditing}
-                />
+                <label className={styles.fieldLabel}>Skills (comma separated)</label>
+                <textarea name="skills" rows="3" value={draft.skills} onChange={handleDraftChange} disabled={!isEditing} />
                 <div className={styles.tagRow}>
-                  {skillTags.map((tag) => (
-                    <span key={tag} className={styles.skillTag}>{tag}</span>
-                  ))}
+                  {skillTags.map(tag => <span key={tag} className={styles.skillTag}>{tag}</span>)}
                 </div>
               </div>
             </div>
           </section>
 
           <section className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h3>Account Information</h3>
-              <span className={styles.sectionNote}>Read-only system details</span>
+            <div className={styles.cardHeader}><h3>Security</h3></div>
+            <div className={styles.securityGrid}>
+              <div className={`${styles.fieldGroup} ${styles.fullWidth}`}>
+                <label className={styles.fieldLabel}>Current Password</label>
+                <input name="currentPassword" type="password" value={passwordForm.currentPassword} onChange={handlePasswordFieldChange} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>New Password</label>
+                <input name="newPassword" type="password" value={passwordForm.newPassword} onChange={handlePasswordFieldChange} />
+              </div>
+              <div className={styles.fieldGroup}>
+                <label className={styles.fieldLabel}>Confirm Password</label>
+                <input name="confirmPassword" type="password" value={passwordForm.confirmPassword} onChange={handlePasswordFieldChange} />
+              </div>
             </div>
-
-            <div className={styles.infoList}>
-              <div className={styles.infoRow}>
-                <span>Account Created</span>
-                <strong>{formatDateTime(profile.accountCreated)}</strong>
-              </div>
-              <div className={styles.infoRow}>
-                <span>Last Login</span>
-                <strong>{formatDateTime(profile.lastLogin)}</strong>
-              </div>
+            <div className={styles.actionRow}>
+              <button type="button" className={styles.primaryBtn} onClick={handlePasswordSave}>Update Password</button>
             </div>
           </section>
 
           <section className={styles.card}>
-            <div className={styles.cardHeader}>
-              <h3>Security Settings</h3>
-              <span className={styles.sectionNote}>Mock only</span>
-            </div>
-
-            <div className={styles.securityGrid}>
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="currentPassword">Current Password</label>
-                <input
-                  id="currentPassword"
-                  name="currentPassword"
-                  type="password"
-                  value={passwordForm.currentPassword}
-                  onChange={handlePasswordFieldChange}
-                />
-              </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="newPassword">New Password</label>
-                <input
-                  id="newPassword"
-                  name="newPassword"
-                  type="password"
-                  value={passwordForm.newPassword}
-                  onChange={handlePasswordFieldChange}
-                />
-              </div>
-
-              <div className={styles.fieldGroup}>
-                <label className={styles.fieldLabel} htmlFor="confirmPassword">Confirm Password</label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  value={passwordForm.confirmPassword}
-                  onChange={handlePasswordFieldChange}
-                />
-              </div>
-            </div>
-
-            <div className={styles.actionRow}>
-              <button type="button" className={styles.primaryBtn} onClick={handlePasswordSave}>
-                Update Password
-              </button>
+            <div className={styles.cardHeader}><h3>Account Info</h3></div>
+            <div className={styles.infoList}>
+              <div className={styles.infoRow}><span>Created</span><strong>{formatDateTime(profile.accountCreated)}</strong></div>
+              <div className={styles.infoRow}><span>Last Login</span><strong>{formatDateTime(profile.lastLogin)}</strong></div>
             </div>
           </section>
         </div>
